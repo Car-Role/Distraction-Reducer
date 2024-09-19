@@ -32,23 +32,6 @@ Your support is greatly appreciated and helps maintain and improve the plugin!
 
 **Note:** Shooting stars are not yet supported by this plugin.
 
-## Configuration
-The plugin offers several configuration options:
-
-### Skilling Toggles
-Enable or disable the overlay for each supported skill:
-- Woodcutting
-- Fishing
-- Mining
-- Cooking
-- Herblore
-- Crafting
-- Fletching
-- Smithing
-
-### Color Picker
-- **Overlay Color**: Customize the color and opacity of the overlay
-
 ## How It Works
 1. The plugin detects when you're performing a supported skilling activity by monitoring your character's animation.
 2. If the corresponding skill toggle is enabled, the overlay will activate after a short delay (to prevent flickering during brief pauses).
