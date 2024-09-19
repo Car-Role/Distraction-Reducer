@@ -3,6 +3,13 @@
 ## Overview
 The Distraction Reducer plugin for RuneLite helps players focus on their skilling activities by reducing visual distractions. When enabled, it overlays a customizable black screen while you're engaged in specific skilling actions, allowing you to concentrate on your task without being distracted by the game's visuals.
 
+## Support the Developer
+If you find this plugin helpful and would like to support its development, you can buy the developer a coffee on Ko-fi:
+
+[Support Car_role on Ko-fi](https://ko-fi.com/car_role)
+
+Your support is greatly appreciated and helps maintain and improve the plugin!
+
 ## Features
 - Supports multiple skilling activities:
   - Woodcutting
@@ -57,13 +64,6 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 ## Contributing
 Contributions are welcome! If you'd like to contribute to the Distraction Reducer plugin, please fork the repository, make your changes, and submit a pull request.
-
-## Support the Developer
-If you find this plugin helpful and would like to support its development, you can buy the developer a coffee on Ko-fi:
-
-[Support Car_role on Ko-fi](https://ko-fi.com/car_role)
-
-Your support is greatly appreciated and helps maintain and improve the plugin!
 
 ## License
 This plugin is released under the [BSD 2-Clause License](https://opensource.org/licenses/BSD-2-Clause).
