@@ -13,46 +13,34 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class DistractionReducerOverlay extends Overlay {
-    private final DistractionReducerPlugin plugin;
+    private final DistractionReducerConfig config;
     private final Client client;
-    private boolean visible = false;
+    private boolean renderOverlay = false;
 
     @Inject
-    DistractionReducerOverlay(DistractionReducerPlugin plugin, Client client) {
-        this.plugin = plugin;
+    private DistractionReducerOverlay(DistractionReducerConfig config, Client client) {
+        this.config = config;
         this.client = client;
         setPosition(OverlayPosition.DYNAMIC);
-        setPriority(OverlayPriority.HIGHEST);
+        setPriority(OverlayPriority.HIGH);
         setLayer(OverlayLayer.ALWAYS_ON_TOP);
     }
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (!visible || client == null) {
+        if (!renderOverlay) {
             return null;
         }
 
-        try {
-            // Get the size of the client canvas
-            final int width = client.getCanvasWidth();
-            final int height = client.getCanvasHeight();
+        Color color = config.overlayColor();
+        graphics.setColor(color);
+        graphics.fillRect(0, 0, client.getCanvasWidth(), client.getCanvasHeight());
 
-            // Create a rectangle covering the entire client canvas
-            Rectangle clientRect = new Rectangle(0, 0, width, height);
-
-            // Use the color from the config, which now includes opacity
-            graphics.setColor(plugin.getConfig().overlayColor());
-            graphics.fill(clientRect);
-            log.debug("Rendering overlay with color: {}", plugin.getConfig().overlayColor());
-        } catch (Exception e) {
-            log.error("Error rendering overlay", e);
-        }
-
-        return null;
+        return new Dimension(client.getCanvasWidth(), client.getCanvasHeight());
     }
 
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-        log.debug("Overlay visibility set to: {}", visible);
+    public void setRenderOverlay(boolean render) {
+        this.renderOverlay = render;
+        log.debug("Overlay rendering set to: {}", render);
     }
 }
