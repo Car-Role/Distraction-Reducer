@@ -1,7 +1,7 @@
 # Distraction Reducer Plugin
 
 ## Overview
-The Distraction Reducer plugin for RuneLite helps players focus on their skilling activities by reducing visual distractions. When enabled, it overlays a customizable black screen while you're engaged in specific skilling actions, allowing you to concentrate on your task without being distracted by the game's visuals.
+The Distraction Reducer plugin helps players focus on other things outside of OSRS by reducing visual distractions. When enabled, it overlays a customizable black screen while you're engaged in specific skilling actions, allowing you to concentrate on your task without being distracted by the game's visuals. When a click is needed the screen will return to normal.
 
 
 https://github.com/user-attachments/assets/7b8ebbb9-dd03-405f-9714-868aa3af914c
