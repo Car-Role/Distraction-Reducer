@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.distractionreducer;
+package com.distractionreducer;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;

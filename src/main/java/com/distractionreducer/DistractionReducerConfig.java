@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.distractionreducer;
+package com.distractionreducer;
 
 import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;

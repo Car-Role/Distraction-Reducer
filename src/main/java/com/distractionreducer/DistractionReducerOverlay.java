@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.distractionreducer;
+package com.distractionreducer;
 
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.Overlay;
