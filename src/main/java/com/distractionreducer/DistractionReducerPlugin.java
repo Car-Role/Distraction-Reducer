@@ -94,7 +94,11 @@ public class DistractionReducerPlugin extends Plugin {
             AnimationID.MINING_MOTHERLODE_BLACK, AnimationID.MINING_MOTHERLODE_MITHRIL, AnimationID.MINING_MOTHERLODE_ADAMANT,
             AnimationID.MINING_MOTHERLODE_RUNE, AnimationID.MINING_MOTHERLODE_DRAGON, AnimationID.MINING_MOTHERLODE_DRAGON_UPGRADED,
             AnimationID.MINING_MOTHERLODE_DRAGON_OR, AnimationID.MINING_MOTHERLODE_INFERNAL, AnimationID.MINING_MOTHERLODE_3A,
-            AnimationID.MINING_MOTHERLODE_CRYSTAL, AnimationID.MINING_MOTHERLODE_TRAILBLAZER
+            AnimationID.MINING_MOTHERLODE_CRYSTAL, AnimationID.MINING_MOTHERLODE_TRAILBLAZER,
+            // Adding Starmining animations
+            6747, 6748, 6749, 6108, 6751, 6750, 6746, 8314, 7140, 643, 8349, 8888, 4483, 7284, 8350,
+            // Adding Dense essence mining animations
+            7201, 7202
     );
 
     @Provides
