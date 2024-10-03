@@ -5,7 +5,6 @@ import javax.inject.Inject;
 import net.runelite.api.*;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
-import net.runelite.api.events.AnimationChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -37,18 +36,26 @@ public class DistractionReducerPlugin extends Plugin {
     @Inject
     private DistractionReducerOverlay distractionReducerOverlay;
 
-    private int idleTicks = 0;
-    private static final int MAX_IDLE_TICKS = 2;
+    private int restoreDelayTicks = 0;
+    private boolean wasSkilling = false;
+
+    private static final int WALKING_POSE = 1205;
+    private static final int RUNNING_POSE = 1210;
+    private static final Set<Integer> TURNING_POSES = Set.of(1206, 1208);
 
     private static final Set<Integer> WOODCUTTING_ANIMATION_IDS = Set.of(
             AnimationID.WOODCUTTING_BRONZE, AnimationID.WOODCUTTING_IRON, AnimationID.WOODCUTTING_STEEL,
             AnimationID.WOODCUTTING_BLACK, AnimationID.WOODCUTTING_MITHRIL, AnimationID.WOODCUTTING_ADAMANT,
             AnimationID.WOODCUTTING_RUNE, AnimationID.WOODCUTTING_DRAGON, AnimationID.WOODCUTTING_INFERNAL,
-            AnimationID.WOODCUTTING_3A_AXE, AnimationID.WOODCUTTING_CRYSTAL, AnimationID.WOODCUTTING_TRAILBLAZER
+            AnimationID.WOODCUTTING_3A_AXE, AnimationID.WOODCUTTING_CRYSTAL, AnimationID.WOODCUTTING_TRAILBLAZER,
+            AnimationID.WOODCUTTING_2H_BRONZE, AnimationID.WOODCUTTING_2H_IRON, AnimationID.WOODCUTTING_2H_STEEL,
+            AnimationID.WOODCUTTING_2H_BLACK, AnimationID.WOODCUTTING_2H_MITHRIL, AnimationID.WOODCUTTING_2H_ADAMANT,
+            AnimationID.WOODCUTTING_2H_RUNE, AnimationID.WOODCUTTING_2H_DRAGON, AnimationID.WOODCUTTING_2H_CRYSTAL,
+            AnimationID.WOODCUTTING_2H_CRYSTAL_INACTIVE, AnimationID.WOODCUTTING_2H_3A
     );
 
     private static final Set<Integer> SMITHING_ANIMATION_IDS = Set.of(
-            AnimationID.SMITHING_ANVIL, AnimationID.SMITHING_SMELTING, AnimationID.SMITHING_CANNONBALL
+            AnimationID.SMITHING_ANVIL, AnimationID.SMITHING_SMELTING
     );
 
     private static final Set<Integer> FISHING_ANIMATION_IDS = Set.of(
@@ -96,9 +103,7 @@ public class DistractionReducerPlugin extends Plugin {
             AnimationID.MINING_MOTHERLODE_RUNE, AnimationID.MINING_MOTHERLODE_DRAGON, AnimationID.MINING_MOTHERLODE_DRAGON_UPGRADED,
             AnimationID.MINING_MOTHERLODE_DRAGON_OR, AnimationID.MINING_MOTHERLODE_INFERNAL, AnimationID.MINING_MOTHERLODE_3A,
             AnimationID.MINING_MOTHERLODE_CRYSTAL, AnimationID.MINING_MOTHERLODE_TRAILBLAZER,
-            // Adding Starmining animations
             6747, 6748, 6749, 6108, 6751, 6750, 6746, 8314, 7140, 643, 8349, 8888, 4483, 7284, 8350,
-            // Adding Dense essence mining animations
             7201, 7202
     );
 
@@ -128,32 +133,49 @@ public class DistractionReducerPlugin extends Plugin {
     }
 
     @Subscribe
-    public void onAnimationChanged(AnimationChanged event) {
-        if (event.getActor() == client.getLocalPlayer()) {
-            int animation = event.getActor().getAnimation();
-            log.debug("Animation changed: {}", animation);
-            updateOverlayVisibility();
-        }
-    }
-
-    @Subscribe
     public void onGameTick(GameTick event) {
         Player player = client.getLocalPlayer();
         if (player == null) return;
 
-        if (player.getAnimation() == AnimationID.IDLE) {
-            idleTicks++;
-        } else {
-            idleTicks = 0;
+        boolean currentlySkilling = isSkilling();
+        boolean isMoving = isPlayerMoving(player);
+
+        if (currentlySkilling) {
+            wasSkilling = true;
+            restoreDelayTicks = 0;
+        } else if (wasSkilling) {
+            if (isMoving) {
+                wasSkilling = false;
+                restoreDelayTicks = 0;
+            } else {
+                restoreDelayTicks++;
+                if (restoreDelayTicks >= config.restoreDelay()) {
+                    wasSkilling = false;
+                    restoreDelayTicks = 0;
+                }
+            }
         }
 
         updateOverlayVisibility();
     }
 
+    private boolean isPlayerMoving(Player player) {
+        int poseAnimation = player.getPoseAnimation();
+        return poseAnimation == WALKING_POSE ||
+                poseAnimation == RUNNING_POSE ||
+                TURNING_POSES.contains(poseAnimation);
+    }
+
     private void updateOverlayVisibility() {
-        boolean shouldRenderOverlay = isSkilling() && (idleTicks < MAX_IDLE_TICKS);
+        Player player = client.getLocalPlayer();
+        if (player == null) return;
+
+        boolean isMoving = isPlayerMoving(player);
+        boolean shouldRenderOverlay = (isSkilling() || wasSkilling) && !isMoving;
+
         distractionReducerOverlay.setRenderOverlay(shouldRenderOverlay);
-        log.debug("Overlay visibility updated. Rendering: {}", shouldRenderOverlay);
+        log.debug("Overlay visibility updated. Rendering: {}, Delay Ticks: {}, Is Moving: {}, Was Skilling: {}",
+                shouldRenderOverlay, restoreDelayTicks, isMoving, wasSkilling);
     }
 
     private boolean isSkilling() {
@@ -169,6 +191,22 @@ public class DistractionReducerPlugin extends Plugin {
                 (HERBLORE_ANIMATION_IDS.contains(animation) && config.herblore()) ||
                 (CRAFTING_ANIMATION_IDS.contains(animation) && config.crafting()) ||
                 (FLETCHING_ANIMATION_IDS.contains(animation) && config.fletching()) ||
-                (SMITHING_ANIMATION_IDS.contains(animation) && config.smithing());
+                (isSmithing(animation) && config.smithing());
+    }
+
+    private boolean isSmithing(int animation) {
+        if (SMITHING_ANIMATION_IDS.contains(animation)) {
+            return true;
+        }
+
+        if (animation == AnimationID.SMITHING_CANNONBALL) {
+            ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+            if (inventory == null) {
+                return false;
+            }
+            return inventory.contains(ItemID.AMMO_MOULD);
+        }
+
+        return false;
     }
 }

@@ -24,6 +24,13 @@ public interface DistractionReducerConfig extends Config {
     )
     String colorPicker = "colorPicker";
 
+    @ConfigSection(
+            name = "Timing",
+            description = "Configure timing-related settings",
+            position = 2
+    )
+    String timing = "timing";
+
     @ConfigItem(
             keyName = "woodcutting",
             name = "Woodcutting",
@@ -113,5 +120,15 @@ public interface DistractionReducerConfig extends Config {
     )
     default Color overlayColor() {
         return new Color(0, 0, 0, 180);
+    }
+
+    @ConfigItem(
+            keyName = "restoreDelay",
+            name = "Restore Delay",
+            description = "Number of ticks to wait before removing the overlay after stopping skilling",
+            section = timing
+    )
+    default int restoreDelay() {
+        return 3;
     }
 }
