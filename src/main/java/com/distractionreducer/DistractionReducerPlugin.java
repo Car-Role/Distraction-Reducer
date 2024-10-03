@@ -204,7 +204,7 @@ public class DistractionReducerPlugin extends Plugin {
             if (inventory == null) {
                 return false;
             }
-            return inventory.contains(ItemID.AMMO_MOULD);
+            return inventory.contains(ItemID.AMMO_MOULD) || inventory.contains(ItemID.DOUBLE_AMMO_MOULD);
         }
 
         return false;
