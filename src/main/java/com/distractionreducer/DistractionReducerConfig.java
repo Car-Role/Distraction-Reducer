@@ -5,6 +5,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Range;
 
 import java.awt.Color;
 
@@ -23,6 +24,13 @@ public interface DistractionReducerConfig extends Config {
             position = 1
     )
     String colorPicker = "colorPicker";
+
+    @ConfigSection(
+            name = "Custom",
+            description = "Custom configuration options apart from Toggles",
+            position = 2
+    )
+    String customSetting = "customSetting";
 
     @ConfigItem(
             keyName = "woodcutting",
@@ -113,5 +121,16 @@ public interface DistractionReducerConfig extends Config {
     )
     default Color overlayColor() {
         return new Color(0, 0, 0, 180);
+    }
+
+    @ConfigItem(
+            keyName = "customIdleTime",
+            name = "Idle Time",
+            description = "Configures the amount of time idle (ticks) before overlay is removed.",
+            section = customSetting
+    )
+    @Range(min = 0)
+    default int customIdleTime() {
+        return 4;
     }
 }

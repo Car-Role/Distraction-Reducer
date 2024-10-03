@@ -38,7 +38,8 @@ public class DistractionReducerPlugin extends Plugin {
     private DistractionReducerOverlay distractionReducerOverlay;
 
     private int idleTicks = 0;
-    private static final int MAX_IDLE_TICKS = 2;
+    private static int skillingCooldownTicks = 0;
+    private static final int SKILLING_COOLDOWN_TICKS = 4;
 
     private static final Set<Integer> WOODCUTTING_ANIMATION_IDS = Set.of(
             AnimationID.WOODCUTTING_BRONZE, AnimationID.WOODCUTTING_IRON, AnimationID.WOODCUTTING_STEEL,
@@ -146,11 +147,17 @@ public class DistractionReducerPlugin extends Plugin {
             idleTicks = 0;
         }
 
+        if (isSkilling()) {
+            skillingCooldownTicks = SKILLING_COOLDOWN_TICKS;
+        } else {
+            skillingCooldownTicks--;
+        }
+
         updateOverlayVisibility();
     }
 
     private void updateOverlayVisibility() {
-        boolean shouldRenderOverlay = isSkilling() && (idleTicks < MAX_IDLE_TICKS);
+        boolean shouldRenderOverlay = (skillingCooldownTicks > 0) && (idleTicks < config.customIdleTime());
         distractionReducerOverlay.setRenderOverlay(shouldRenderOverlay);
         log.debug("Overlay visibility updated. Rendering: {}", shouldRenderOverlay);
     }
