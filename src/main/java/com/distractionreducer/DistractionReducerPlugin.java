@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @PluginDescriptor(
         name = "Distraction Reducer",
         description = "Blacks out the screen while skilling to reduce distractions",
-        tags = {"woodcutting", "fishing", "mining", "cooking", "herblore", "crafting", "fletching", "smithing", "skilling", "overlay"}
+        tags = {"woodcutting", "fishing", "mining", "cooking", "herblore", "crafting", "fletching", "smithing", "magic", "skilling", "overlay"}
 )
 @Slf4j
 public class DistractionReducerPlugin extends Plugin {
@@ -42,6 +42,31 @@ public class DistractionReducerPlugin extends Plugin {
     private static final int WALKING_POSE = 1205;
     private static final int RUNNING_POSE = 1210;
     private static final Set<Integer> TURNING_POSES = Set.of(1206, 1208);
+
+    // TOA Region IDs
+    private static final int TOA_LOBBY = 14160;
+    private static final Set<Integer> TOA_REGIONS = Set.of(
+            14162, // Croc
+            14164, // Scarab
+            14166, // Het
+            14168, // Baba
+            14170, // Zebak
+            14172, // Kephri
+            14160, // Lobby
+            14674  // Wardens
+    );
+
+    // New Magic Animation IDs
+    private static final Set<Integer> PLANK_MAKE_ANIMATION_IDS = Set.of(6298);
+    private static final Set<Integer> ENCHANT_JEWELRY_ANIMATION_IDS = Set.of(
+        931,  // Lvl-1 Enchant
+        619,  // Lvl-2 Enchant
+        721,  // Lvl-3 Enchant
+        7531  // Lvl-4 Enchant and above (4-7 use the same animation)
+    );
+    private static final Set<Integer> CHARGE_ORB_ANIMATION_IDS = Set.of(726);
+    private static final Set<Integer> BAKE_PIE_ANIMATION_IDS = Set.of(4413);
+    private static final Set<Integer> STRING_JEWELRY_ANIMATION_IDS = Set.of(4412);
 
     private static final Set<Integer> WOODCUTTING_ANIMATION_IDS = Set.of(
             AnimationID.WOODCUTTING_BRONZE, AnimationID.WOODCUTTING_IRON, AnimationID.WOODCUTTING_STEEL,
@@ -79,7 +104,9 @@ public class DistractionReducerPlugin extends Plugin {
 
     private static final Set<Integer> CRAFTING_ANIMATION_IDS = Set.of(
             AnimationID.CRAFTING_LEATHER, AnimationID.CRAFTING_GLASSBLOWING, AnimationID.CRAFTING_SPINNING,
-            AnimationID.CRAFTING_POTTERS_WHEEL, AnimationID.CRAFTING_POTTERY_OVEN
+            AnimationID.CRAFTING_POTTERS_WHEEL, AnimationID.CRAFTING_POTTERY_OVEN,
+            888, // Gem cutting
+            7531 // Battlestaff crafting
     );
 
     private static final Set<Integer> FLETCHING_ANIMATION_IDS = Set.of(
@@ -114,14 +141,12 @@ public class DistractionReducerPlugin extends Plugin {
 
     @Override
     protected void startUp() {
-        log.info("Distraction Reducer plugin started!");
         overlayManager.add(distractionReducerOverlay);
         clientThread.invoke(this::updateOverlayVisibility);
     }
 
     @Override
     protected void shutDown() {
-        log.info("Distraction Reducer plugin stopped!");
         overlayManager.remove(distractionReducerOverlay);
     }
 
@@ -184,6 +209,13 @@ public class DistractionReducerPlugin extends Plugin {
 
         int animation = player.getAnimation();
 
+        // Check if player is in TOA instance and in a puzzle room
+        if (client.isInInstancedRegion() &&
+                TOA_REGIONS.contains(client.getLocalPlayer().getWorldLocation().getRegionID()) &&
+                !isInToaBank()) {
+            return false;
+        }
+
         return (WOODCUTTING_ANIMATION_IDS.contains(animation) && config.woodcutting()) ||
                 (FISHING_ANIMATION_IDS.contains(animation) && config.fishing()) ||
                 (MINING_ANIMATION_IDS.contains(animation) && config.mining()) ||
@@ -191,7 +223,13 @@ public class DistractionReducerPlugin extends Plugin {
                 (HERBLORE_ANIMATION_IDS.contains(animation) && config.herblore()) ||
                 (CRAFTING_ANIMATION_IDS.contains(animation) && config.crafting()) ||
                 (FLETCHING_ANIMATION_IDS.contains(animation) && config.fletching()) ||
-                (isSmithing(animation) && config.smithing());
+                (isSmithing(animation) && config.smithing()) ||
+                (isMagic(animation) && config.magic());
+    }
+
+    private boolean isInToaBank() {
+        return client.getLocalPlayer().getWorldLocation().getRegionID() == TOA_LOBBY &&
+                client.getVarbitValue(Varbits.TOA_RAID_LEVEL) > 0; // Check if in an active raid
     }
 
     private boolean isSmithing(int animation) {
@@ -209,4 +247,38 @@ public class DistractionReducerPlugin extends Plugin {
 
         return false;
     }
+
+    private boolean isMagic(int animation) {
+        return PLANK_MAKE_ANIMATION_IDS.contains(animation) ||
+               isEnchantingJewelry(animation) ||
+               CHARGE_ORB_ANIMATION_IDS.contains(animation) ||
+               BAKE_PIE_ANIMATION_IDS.contains(animation) ||
+               (STRING_JEWELRY_ANIMATION_IDS.contains(animation) && !isNPCContact());
+    }
+
+    private boolean isEnchantingJewelry(int animation) {
+        if (!ENCHANT_JEWELRY_ANIMATION_IDS.contains(animation)) {
+            return false;
+        }
+        
+        // Check if the player is using the standard spellbook
+        return client.getVarbitValue(Varbits.SPELLBOOK) == 0;
+    }
+
+    private boolean isNPCContact() {
+        Player player = client.getLocalPlayer();
+        if (player == null) return false;
+
+        int animation = player.getAnimation();
+        if (animation != NPC_CONTACT_ANIMATION_ID) return false;
+
+        // Check if the player has the Lunar spellbook active
+        return client.getVarbitValue(Varbits.SPELLBOOK) == 2;
+    }
+
+    // Add this constant with the other animation ID constants
+    private static final int NPC_CONTACT_ANIMATION_ID = 4413;
+
+    // Add this constant for the standard spellbook ID
+    private static final int STANDARD_SPELLBOOK_ID = 0;
 }

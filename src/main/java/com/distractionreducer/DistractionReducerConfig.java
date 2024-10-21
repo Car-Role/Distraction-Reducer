@@ -20,17 +20,18 @@ public interface DistractionReducerConfig extends Config {
     @ConfigSection(
             name = "Color Picker",
             description = "Customize the overlay color",
-            position = 1
+            position = 2
     )
     String colorPicker = "colorPicker";
 
     @ConfigSection(
             name = "Timing",
             description = "Configure timing-related settings",
-            position = 2
+            position = 3
     )
     String timing = "timing";
 
+    // Existing skilling toggles
     @ConfigItem(
             keyName = "woodcutting",
             name = "Woodcutting",
@@ -108,6 +109,16 @@ public interface DistractionReducerConfig extends Config {
             section = skillingToggles
     )
     default boolean smithing() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "magic",
+            name = "Magic",
+            description = "Display overlay while performing magic activities",
+            section = skillingToggles
+    )
+    default boolean magic() {
         return true;
     }
 
