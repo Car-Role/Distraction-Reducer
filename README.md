@@ -26,11 +26,10 @@ Your support is greatly appreciated and helps maintain and improve the plugin!
   - Fletching
   - Smithing
 - Customizable overlay color and opacity
+- Customizable restore delay
 - Individual toggles for each supported skill
 - Automatic detection of skilling activities
 - Brief delay before activation to prevent flickering during short pauses
-
-**Note:** Shooting stars are not yet supported by this plugin.
 
 ## How It Works
 1. The plugin detects when you're performing a supported skilling activity by monitoring your character's animation.
