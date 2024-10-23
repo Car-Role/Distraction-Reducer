@@ -3,6 +3,7 @@ package com.distractionreducer;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import net.runelite.api.*;
+import net.runelite.api.coords.WorldPoint;  // Add this import
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.config.ConfigManager;
@@ -56,13 +57,32 @@ public class DistractionReducerPlugin extends Plugin {
             14674  // Wardens
     );
 
-    // New Magic Animation IDs
+    // Updated Magic Animation IDs
     private static final Set<Integer> PLANK_MAKE_ANIMATION_IDS = Set.of(6298);
     private static final Set<Integer> ENCHANT_JEWELRY_ANIMATION_IDS = Set.of(
-        931,  // Lvl-1 Enchant
-        619,  // Lvl-2 Enchant
-        721,  // Lvl-3 Enchant
-        7531  // Lvl-4 Enchant and above (4-7 use the same animation)
+        619,  // Sapphire
+        721,  // Emerald
+        724,  // Ruby
+        727,  // Diamond
+        730,  // Dragonstone
+        
+        // Bulk enchantment animations
+        719,  // Sapphire bulk
+        722,  // Emerald bulk
+        725,  // Ruby bulk
+        728,  // Diamond bulk
+        731,  // Dragonstone bulk
+        
+        // Special item-specific animations
+        720,  // Games necklace (Sapphire)
+        723,  // Ring of dueling (Emerald)
+        726,  // Binding necklace (Ruby)
+        729,  // Ring of life (Diamond)
+        732,  // Combat bracelet (Dragonstone)
+        
+        // Modern universal animations
+        7531, // Modern universal
+        931   // Modern alternative
     );
     private static final Set<Integer> CHARGE_ORB_ANIMATION_IDS = Set.of(726);
     private static final Set<Integer> BAKE_PIE_ANIMATION_IDS = Set.of(4413);
@@ -210,10 +230,11 @@ public class DistractionReducerPlugin extends Plugin {
         int animation = player.getAnimation();
 
         // Check if player is in TOA instance and in a puzzle room
-        if (client.isInInstancedRegion() &&
-                TOA_REGIONS.contains(client.getLocalPlayer().getWorldLocation().getRegionID()) &&
-                !isInToaBank()) {
-            return false;
+        if (client.isInInstancedRegion()) {
+            WorldPoint instancePoint = WorldPoint.fromLocalInstance(client, player.getLocalLocation());
+            if (instancePoint != null && TOA_REGIONS.contains(instancePoint.getRegionID()) && !isInToaBank()) {
+                return false;
+            }
         }
 
         return (WOODCUTTING_ANIMATION_IDS.contains(animation) && config.woodcutting()) ||
