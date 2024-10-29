@@ -122,6 +122,16 @@ public interface DistractionReducerConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+            keyName = "firemaking",
+            name = "Firemaking",
+            description = "Display overlay while adding logs to fires",
+            section = skillingToggles
+    )
+    default boolean firemaking() {
+        return true;
+    }
+
     @Alpha
     @ConfigItem(
             keyName = "overlayColor",

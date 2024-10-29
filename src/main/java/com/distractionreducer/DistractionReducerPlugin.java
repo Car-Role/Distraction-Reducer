@@ -162,6 +162,17 @@ public class DistractionReducerPlugin extends Plugin {
             7201, 7202
     );
 
+    // Update the FIREMAKING_ANIMATION_IDS set with correct bonfire animations
+    private static final Set<Integer> FIREMAKING_ANIMATION_IDS = Set.of(
+            10565,  // Regular logs
+            10569,  // Oak logs
+            10572,  // Willow logs
+            10568,  // Maple logs
+            10573,  // Yew logs
+            10566,  // Magic logs
+            10570   // Redwood logs
+    );
+
     @Provides
     DistractionReducerConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(DistractionReducerConfig.class);
@@ -193,19 +204,22 @@ public class DistractionReducerPlugin extends Plugin {
         boolean currentlySkilling = isSkilling();
         boolean isMoving = isPlayerMoving(player);
 
+        // Immediately clear overlay if moving
+        if (isMoving) {
+            wasSkilling = false;
+            restoreDelayTicks = 0;
+            distractionReducerOverlay.setRenderOverlay(false);  // Add immediate overlay update
+            return;
+        }
+
         if (currentlySkilling) {
             wasSkilling = true;
             restoreDelayTicks = 0;
         } else if (wasSkilling) {
-            if (isMoving) {
+            restoreDelayTicks++;
+            if (restoreDelayTicks >= config.restoreDelay()) {
                 wasSkilling = false;
                 restoreDelayTicks = 0;
-            } else {
-                restoreDelayTicks++;
-                if (restoreDelayTicks >= config.restoreDelay()) {
-                    wasSkilling = false;
-                    restoreDelayTicks = 0;
-                }
             }
         }
 
@@ -214,10 +228,26 @@ public class DistractionReducerPlugin extends Plugin {
 
     private boolean isPlayerMoving(Player player) {
         int poseAnimation = player.getPoseAnimation();
+        
+        // Store the current position
+        if (lastPlayerPosition == null) {
+            lastPlayerPosition = player.getWorldLocation();
+            return false;
+        }
+
+        // Check if position changed since last tick
+        WorldPoint currentPosition = player.getWorldLocation();
+        boolean moved = !currentPosition.equals(lastPlayerPosition);
+        lastPlayerPosition = currentPosition;
+
         return poseAnimation == WALKING_POSE ||
                 poseAnimation == RUNNING_POSE ||
-                TURNING_POSES.contains(poseAnimation);
+                TURNING_POSES.contains(poseAnimation) ||
+                moved;
     }
+
+    // Add this field at the class level (with other private fields)
+    private WorldPoint lastPlayerPosition = null;
 
     private void updateOverlayVisibility() {
         Player player = client.getLocalPlayer();
@@ -252,6 +282,7 @@ public class DistractionReducerPlugin extends Plugin {
                 (HERBLORE_ANIMATION_IDS.contains(animation) && config.herblore()) ||
                 (CRAFTING_ANIMATION_IDS.contains(animation) && config.crafting()) ||
                 (FLETCHING_ANIMATION_IDS.contains(animation) && config.fletching()) ||
+                (FIREMAKING_ANIMATION_IDS.contains(animation) && config.firemaking()) ||
                 (isSmithing(animation) && config.smithing()) ||
                 (isMagic(animation) && config.magic());
     }
