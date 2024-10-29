@@ -125,8 +125,16 @@ public class DistractionReducerPlugin extends Plugin {
     private static final Set<Integer> CRAFTING_ANIMATION_IDS = Set.of(
             AnimationID.CRAFTING_LEATHER, AnimationID.CRAFTING_GLASSBLOWING, AnimationID.CRAFTING_SPINNING,
             AnimationID.CRAFTING_POTTERS_WHEEL, AnimationID.CRAFTING_POTTERY_OVEN,
-            888, // Gem cutting
-            7531 // Battlestaff crafting
+            // Gem cutting animations - verified unique IDs
+            892,  // Sapphire
+            891,  // Emerald
+            890,  // Ruby
+            889,  // Diamond
+            888,  // Dragonstone
+            887,  // Opal
+            886,  // Jade
+            885,  // Red topaz
+            7531  // Battlestaff crafting
     );
 
     private static final Set<Integer> FLETCHING_ANIMATION_IDS = Set.of(
