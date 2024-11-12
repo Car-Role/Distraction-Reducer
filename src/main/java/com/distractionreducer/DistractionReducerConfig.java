@@ -152,4 +152,23 @@ public interface DistractionReducerConfig extends Config {
     default int restoreDelay() {
         return 3;
     }
+
+    // Add this new section after the existing sections
+    @ConfigSection(
+            name = "Miscellaneous",
+            description = "Toggle overlay for miscellaneous activities",
+            position = 4
+    )
+    String miscellaneous = "miscellaneous";
+
+    // Add this new config item
+    @ConfigItem(
+            keyName = "bakePie",
+            name = "Bake Pie",
+            description = "Display overlay while using Bake Pie spell (Warning: Shares animation with NPC Contact)",
+            section = miscellaneous
+    )
+    default boolean bakePie() {
+        return false;
+    }
 }

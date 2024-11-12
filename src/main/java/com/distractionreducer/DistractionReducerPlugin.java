@@ -312,8 +312,7 @@ public class DistractionReducerPlugin extends Plugin {
         return PLANK_MAKE_ANIMATION_IDS.contains(animation) ||
                isEnchantingJewelry(animation) ||
                CHARGE_ORB_ANIMATION_IDS.contains(animation) ||
-               BAKE_PIE_ANIMATION_IDS.contains(animation) ||
-               (STRING_JEWELRY_ANIMATION_IDS.contains(animation) && !isNPCContact());
+               (BAKE_PIE_ANIMATION_IDS.contains(animation) && config.bakePie());
     }
 
     private boolean isEnchantingJewelry(int animation) {
