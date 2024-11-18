@@ -1,5 +1,7 @@
 # Distraction Reducer Plugin
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/car_role)
+
 ## Overview
 The Distraction Reducer plugin helps players focus on other things outside of OSRS by reducing visual distractions. When enabled, it overlays a customizable black screen while you're engaged in specific skilling actions, allowing you to concentrate on your task without being distracted by the game's visuals. When a click is needed the screen will return to normal.
 
@@ -7,13 +9,6 @@ The Distraction Reducer plugin helps players focus on other things outside of OS
 https://github.com/user-attachments/assets/7b8ebbb9-dd03-405f-9714-868aa3af914c
 
 https://github.com/user-attachments/assets/3c1d7267-9103-41e2-9f6a-79cfa498e330
-
-## Support the Developer
-If you find this plugin helpful and would like to support its development, you can buy the developer a coffee on Ko-fi:
-
-[Support Car_role on Ko-fi](https://ko-fi.com/car_role)
-
-Your support is greatly appreciated and helps maintain and improve the plugin!
 
 ## Features
 - Supports multiple skilling activities:
