@@ -2,7 +2,7 @@ package com.distractionreducer;
 
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -76,30 +76,30 @@ class DistractionReducerOverlay extends Overlay {
         java.util.List<Rectangle> chatAreas = new java.util.ArrayList<>();
         
         // Get main chatbox parent
-        Widget chatboxParent = client.getWidget(WidgetInfo.CHATBOX_PARENT);
+        Widget chatboxParent = client.getWidget(InterfaceID.Chatbox.UNIVERSE);
         if (chatboxParent != null && !chatboxParent.isHidden()) {
             chatAreas.add(chatboxParent.getBounds());
         }
         
         // Get chatbox messages (the actual text area)
-        Widget chatboxMessages = client.getWidget(WidgetInfo.CHATBOX_MESSAGES);
+        Widget chatboxMessages = client.getWidget(InterfaceID.Chatbox.MES_TEXT);
         if (chatboxMessages != null && !chatboxMessages.isHidden()) {
             chatAreas.add(chatboxMessages.getBounds());
         }
         
         // Get chatbox input field
-        Widget chatboxInput = client.getWidget(WidgetInfo.CHATBOX_INPUT);
+        Widget chatboxInput = client.getWidget(InterfaceID.Chatbox.MES_TEXT2);
         if (chatboxInput != null && !chatboxInput.isHidden()) {
             chatAreas.add(chatboxInput.getBounds());
         }
         
         // Get chat channel buttons (All, Game, Public, Private, etc.)
-        Widget chatboxButtons = client.getWidget(WidgetInfo.CHATBOX_BUTTONS);
+        Widget chatboxButtons = client.getWidget(InterfaceID.Chatbox.SCROLLAREA);
         if (chatboxButtons != null && !chatboxButtons.isHidden()) {
             chatAreas.add(chatboxButtons.getBounds());
         }
         
-        // Note: Some chat widgets like tabs might not be directly accessible via WidgetInfo
+        // Note: Some chat widgets like tabs might not be directly accessible via InterfaceID
         // We'll rely on the main components with exact bounds (no padding)
         
         if (chatAreas.isEmpty()) {
@@ -120,13 +120,13 @@ class DistractionReducerOverlay extends Overlay {
         java.util.List<Rectangle> inventoryAreas = new java.util.ArrayList<>();
         
         // Get inventory widget
-        Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
+        Widget inventory = client.getWidget(InterfaceID.Inventory.ITEMS);
         if (inventory != null && !inventory.isHidden()) {
             inventoryAreas.add(inventory.getBounds());
         }
         
         // Get stats (skills) widget - included with inventory setting
-        Widget stats = client.getWidget(WidgetInfo.SKILLS_CONTAINER);
+        Widget stats = client.getWidget(InterfaceID.Stats.UNIVERSE);
         if (stats != null && !stats.isHidden()) {
             inventoryAreas.add(stats.getBounds());
         }
