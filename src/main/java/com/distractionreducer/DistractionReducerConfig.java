@@ -155,9 +155,16 @@ public interface DistractionReducerConfig extends Config {
 
     // Add this new section after the existing sections
     @ConfigSection(
+            name = "Overlay Passthrough",
+            description = "Configure which UI elements can pass through the overlay",
+            position = 4
+    )
+    String overlaySettings = "overlaySettings";
+
+    @ConfigSection(
             name = "Miscellaneous",
             description = "Toggle overlay for miscellaneous activities",
-            position = 4
+            position = 5
     )
     String miscellaneous = "miscellaneous";
 
@@ -171,4 +178,26 @@ public interface DistractionReducerConfig extends Config {
     default boolean bakePie() {
         return false;
     }
+
+    @ConfigItem(
+            keyName = "showChat",
+            name = "Show Chat",
+            description = "Show chat window in front of the overlay when active",
+            section = overlaySettings
+    )
+    default boolean showChat() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "showInventory",
+            name = "Show Inventory",
+            description = "Show inventory in front of the overlay when active",
+            section = overlaySettings
+    )
+    default boolean showInventory() {
+        return false;
+    }
+
+
 }
