@@ -103,7 +103,7 @@ public class DistractionReducerPlugin extends Plugin {
     );
 
     private static final Set<Integer> SMITHING_ANIMATION_IDS = Set.of(
-            AnimationID.SMITHING_ANVIL, AnimationID.SMITHING_SMELTING
+            AnimationID.SMITHING_ANVIL, AnimationID.SMITHING_SMELTING, AnimationID.SMITHING_IMCANDO_HAMMER
     );
 
     private static final Set<Integer> FISHING_ANIMATION_IDS = Set.of(
