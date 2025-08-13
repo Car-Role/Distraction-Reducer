@@ -18,6 +18,13 @@ public interface DistractionReducerConfig extends Config {
     String skillingToggles = "skillingToggles";
 
     @ConfigSection(
+            name = "Combat",
+            description = "Configure combat-based overlay activation",
+            position = 1
+    )
+    String combatIntegration = "combatIntegration";
+
+    @ConfigSection(
             name = "Color Picker",
             description = "Customize the overlay color",
             position = 2
@@ -168,6 +175,8 @@ public interface DistractionReducerConfig extends Config {
     )
     String miscellaneous = "miscellaneous";
 
+
+
     // Add this new config item
     @ConfigItem(
             keyName = "bakePie",
@@ -176,6 +185,26 @@ public interface DistractionReducerConfig extends Config {
             section = miscellaneous
     )
     default boolean bakePie() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "stringJewelry",
+            name = "String Jewelry",
+            description = "Display overlay while using String Jewelry spell (Warning: Problematic animation ID)",
+            section = miscellaneous
+    )
+    default boolean stringJewelry() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "plankMake",
+            name = "Plank Make",
+            description = "Display overlay while using Plank Make spell (Warning: Problematic animation ID)",
+            section = miscellaneous
+    )
+    default boolean plankMake() {
         return false;
     }
 
@@ -199,5 +228,104 @@ public interface DistractionReducerConfig extends Config {
         return false;
     }
 
+    // Combat Settings
+    @ConfigItem(
+            keyName = "enableCombatBlackout",
+            name = "Enable Combat Blackout",
+            description = "Enable overlay blackout when fighting specific monsters",
+            section = combatIntegration,
+            position = 1
+    )
+    default boolean enableCombatBlackout() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "monsterNames",
+            name = "Monster Names",
+            description = "Comma-separated list of monster names to trigger blackout (e.g., Zulrah, Vorkath)",
+            section = combatIntegration,
+            position = 2
+    )
+    default String monsterNames() {
+        return "Gemstone Crab";
+    }
+
+    @ConfigItem(
+            keyName = "monsterIds",
+            name = "Monster IDs",
+            description = "Comma-separated list of monster IDs to trigger blackout. Use the Identificator plugin to find NPC IDs (e.g., 2042,2043,2044)",
+            section = combatIntegration,
+            position = 3
+    )
+    default String monsterIds() {
+        return "";
+    }
+
+    @ConfigItem(
+            keyName = "combatRestoreDelay",
+            name = "Combat Restore Delay",
+            description = "Duration in ticks to maintain blackout after combat ends",
+            section = combatIntegration,
+            position = 4
+    )
+    default int combatRestoreDelay() {
+        return 8;
+    }
+
+    @ConfigItem(
+            keyName = "enableHealthOverride",
+            name = "Enable Health Override",
+            description = "Disable blackout when health is below threshold",
+            section = combatIntegration,
+            position = 50
+    )
+    default boolean enableHealthOverride() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "healthThreshold",
+            name = "Health Threshold",
+            description = "Health points below which blackout is disabled",
+            section = combatIntegration,
+            position = 51
+    )
+    default int healthThreshold() {
+        return 30;
+    }
+
+    @ConfigItem(
+            keyName = "enablePrayerOverride",
+            name = "Enable Prayer Override",
+            description = "Disable blackout when prayer is below threshold",
+            section = combatIntegration,
+            position = 52
+    )
+    default boolean enablePrayerOverride() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "prayerThreshold",
+            name = "Prayer Threshold",
+            description = "Prayer points below which blackout is disabled",
+            section = combatIntegration,
+            position = 53
+    )
+    default int prayerThreshold() {
+        return 20;
+    }
+
+    @ConfigItem(
+            keyName = "enableWildernessOverride",
+            name = "Enable in Wilderness",
+            description = "Allow combat blackout to work in the Wilderness",
+            section = combatIntegration,
+            position = 54
+    )
+    default boolean enableWildernessOverride() {
+        return false;
+    }
 
 }

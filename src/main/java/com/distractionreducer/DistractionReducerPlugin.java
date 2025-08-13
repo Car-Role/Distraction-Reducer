@@ -4,6 +4,7 @@ import com.google.inject.Provides;
 import javax.inject.Inject;
 import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;  // Add this import
+import net.runelite.api.coords.WorldArea;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.config.ConfigManager;
@@ -11,7 +12,9 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.events.ConfigChanged;
 import java.util.Set;
+import java.util.HashSet;
 import net.runelite.client.callback.ClientThread;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,6 +42,12 @@ public class DistractionReducerPlugin extends Plugin {
 
     private int restoreDelayTicks = 0;
     private boolean wasSkilling = false;
+
+    // Combat integration fields
+    private int combatRestoreDelayTicks = 0;
+    private boolean wasCombating = false;
+    private Set<Integer> targetMonsterIds = new HashSet<>();
+    private Set<String> targetMonsterNames = new HashSet<>();
 
     private static final int WALKING_POSE = 1205;
     private static final int RUNNING_POSE = 1210;
@@ -186,11 +195,23 @@ public class DistractionReducerPlugin extends Plugin {
     protected void startUp() {
         overlayManager.add(distractionReducerOverlay);
         clientThread.invoke(this::updateOverlayVisibility);
+        updateTargetMonsterIds();
     }
 
     @Override
     protected void shutDown() {
         overlayManager.remove(distractionReducerOverlay);
+    }
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged configChanged) {
+        if ("distractionreducer".equals(configChanged.getGroup())) {
+            if ("monsterIds".equals(configChanged.getKey()) || 
+                "monsterNames".equals(configChanged.getKey()) ||
+                "enableCombatBlackout".equals(configChanged.getKey())) {
+                updateTargetMonsterIds();
+            }
+        }
     }
 
     @Subscribe
@@ -206,16 +227,20 @@ public class DistractionReducerPlugin extends Plugin {
         if (player == null) return;
 
         boolean currentlySkilling = isSkilling();
+        boolean currentlyCombating = isCombatingTargetMonster();
         boolean isMoving = isPlayerMoving(player);
 
         // Immediately clear overlay if moving
         if (isMoving) {
             wasSkilling = false;
+            wasCombating = false;
             restoreDelayTicks = 0;
-            distractionReducerOverlay.setRenderOverlay(false);  // Add immediate overlay update
+            combatRestoreDelayTicks = 0;
+            distractionReducerOverlay.setRenderOverlay(false);
             return;
         }
 
+        // Handle skilling logic
         if (currentlySkilling) {
             wasSkilling = true;
             restoreDelayTicks = 0;
@@ -224,6 +249,18 @@ public class DistractionReducerPlugin extends Plugin {
             if (restoreDelayTicks >= config.restoreDelay()) {
                 wasSkilling = false;
                 restoreDelayTicks = 0;
+            }
+        }
+
+        // Handle combat logic
+        if (currentlyCombating) {
+            wasCombating = true;
+            combatRestoreDelayTicks = 0;
+        } else if (wasCombating) {
+            combatRestoreDelayTicks++;
+            if (combatRestoreDelayTicks >= config.combatRestoreDelay()) {
+                wasCombating = false;
+                combatRestoreDelayTicks = 0;
             }
         }
 
@@ -258,11 +295,14 @@ public class DistractionReducerPlugin extends Plugin {
         if (player == null) return;
 
         boolean isMoving = isPlayerMoving(player);
-        boolean shouldRenderOverlay = (isSkilling() || wasSkilling) && !isMoving;
+        boolean shouldRenderFromSkilling = (isSkilling() || wasSkilling) && !isMoving;
+        boolean shouldRenderFromCombat = (isCombatingTargetMonster() || wasCombating) && !isMoving && !isHealthOrPrayerOverrideActive() && !isWildernessOverrideActive();
+        
+        boolean shouldRenderOverlay = shouldRenderFromSkilling || shouldRenderFromCombat;
 
         distractionReducerOverlay.setRenderOverlay(shouldRenderOverlay);
-        log.debug("Overlay visibility updated. Rendering: {}, Delay Ticks: {}, Is Moving: {}, Was Skilling: {}",
-                shouldRenderOverlay, restoreDelayTicks, isMoving, wasSkilling);
+        log.debug("Overlay visibility updated. Rendering: {}, Skilling: {}, Combat: {}, Is Moving: {}, HP/Prayer Override: {}, Wilderness Override: {}",
+                shouldRenderOverlay, shouldRenderFromSkilling, shouldRenderFromCombat, isMoving, isHealthOrPrayerOverrideActive(), isWildernessOverrideActive());
     }
 
     private boolean isSkilling() {
@@ -344,7 +384,9 @@ public class DistractionReducerPlugin extends Plugin {
         return PLANK_MAKE_ANIMATION_IDS.contains(animation) ||
                 isEnchantingJewelry(animation) ||
                 CHARGE_ORB_ANIMATION_IDS.contains(animation) ||
-                (BAKE_PIE_ANIMATION_IDS.contains(animation) && config.bakePie());
+                (BAKE_PIE_ANIMATION_IDS.contains(animation) && config.bakePie()) ||
+                (animation == STRING_JEWELRY_ANIMATION_ID && config.stringJewelry()) ||
+                (animation == PLANK_MAKE_ANIMATION_ID && config.plankMake());
     }
 
     private boolean isEnchantingJewelry(int animation) {
@@ -367,9 +409,127 @@ public class DistractionReducerPlugin extends Plugin {
         return client.getVarbitValue(Varbits.SPELLBOOK) == 2;
     }
 
+    private boolean isInWilderness() {
+        Player player = client.getLocalPlayer();
+        if (player == null) return false;
+        
+        WorldPoint location = player.getWorldLocation();
+        return location.isInArea2D(WILDERNESS_ABOVE_GROUND, WILDERNESS_UNDERGROUND);
+    }
+
+    private boolean isWildernessOverrideActive() {
+        // If in wilderness and wilderness is NOT enabled, then override (disable) combat blackout
+        return isInWilderness() && !config.enableWildernessOverride();
+    }
+
     // Add this constant with the other animation ID constants
     private static final int NPC_CONTACT_ANIMATION_ID = 4413;
+    private static final int STRING_JEWELRY_ANIMATION_ID = 4412;
+    private static final int PLANK_MAKE_ANIMATION_ID = 6298;
 
     // Add this constant for the standard spellbook ID
     private static final int STANDARD_SPELLBOOK_ID = 0;
+
+    // Wilderness area constants for robust detection (from NPC Aggro Area plugin)
+    private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
+    private static final WorldArea WILDERNESS_UNDERGROUND = new WorldArea(2944, 9918, 320, 442, 0);
+
+    private void updateTargetMonsterIds() {
+        targetMonsterIds.clear();
+        targetMonsterNames.clear();
+        
+        if (config.enableCombatBlackout()) {
+            // Parse monster IDs
+            if (!config.monsterIds().trim().isEmpty()) {
+                String[] ids = config.monsterIds().split(",");
+                for (String id : ids) {
+                    try {
+                        targetMonsterIds.add(Integer.parseInt(id.trim()));
+                    } catch (NumberFormatException e) {
+                        log.warn("Invalid monster ID: {}", id.trim());
+                    }
+                }
+            }
+            
+            // Parse monster names
+            if (!config.monsterNames().trim().isEmpty()) {
+                String[] names = config.monsterNames().split(",");
+                for (String name : names) {
+                    targetMonsterNames.add(name.trim().toLowerCase());
+                }
+            }
+        }
+        
+        log.debug("Updated target monster IDs: {}", targetMonsterIds);
+        log.debug("Updated target monster names: {}", targetMonsterNames);
+    }
+
+    private boolean isCombatingTargetMonster() {
+        if (!config.enableCombatBlackout() || (targetMonsterIds.isEmpty() && targetMonsterNames.isEmpty())) {
+            return false;
+        }
+
+        Player player = client.getLocalPlayer();
+        if (player == null) {
+            return false;
+        }
+
+        Actor interacting = player.getInteracting();
+        if (!(interacting instanceof NPC)) {
+            return false;
+        }
+
+        NPC npc = (NPC) interacting;
+        int npcId = npc.getId();
+        String npcName = npc.getName();
+        
+        // Check by ID
+        boolean isTargetById = targetMonsterIds.contains(npcId);
+        
+        // Check by name
+        boolean isTargetByName = false;
+        if (npcName != null && !targetMonsterNames.isEmpty()) {
+            isTargetByName = targetMonsterNames.contains(npcName.toLowerCase());
+        }
+        
+        boolean isTargetMonster = isTargetById || isTargetByName;
+        if (isTargetMonster) {
+            if (isTargetById) {
+                log.debug("Player is combating target monster with ID: {}", npcId);
+            }
+            if (isTargetByName) {
+                log.debug("Player is combating target monster with name: {}", npcName);
+            }
+        }
+        
+        return isTargetMonster;
+    }
+
+    private boolean isHealthOrPrayerOverrideActive() {
+        if (!config.enableCombatBlackout()) {
+            return false;
+        }
+
+        // Check health override
+        if (config.enableHealthOverride()) {
+            int currentHp = client.getBoostedSkillLevel(Skill.HITPOINTS);
+            
+            if (currentHp <= config.healthThreshold()) {
+                log.debug("Health override active: {} HP <= {} HP", currentHp, config.healthThreshold());
+                return true;
+            }
+        }
+
+        // Check prayer override
+        if (config.enablePrayerOverride()) {
+            int currentPrayer = client.getBoostedSkillLevel(Skill.PRAYER);
+            
+            if (currentPrayer <= config.prayerThreshold()) {
+                log.debug("Prayer override active: {} Prayer <= {} Prayer", currentPrayer, config.prayerThreshold());
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
