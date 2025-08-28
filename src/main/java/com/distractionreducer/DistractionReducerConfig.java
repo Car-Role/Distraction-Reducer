@@ -209,6 +209,16 @@ public interface DistractionReducerConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "enableInPOH",
+            name = "Enable in POH",
+            description = "Allow overlay to activate while inside Player-Owned House",
+            section = miscellaneous
+    )
+    default boolean enableInPOH() {
+        return false;
+    }
+
+    @ConfigItem(
             keyName = "showChat",
             name = "Show Chat",
             description = "Show chat window in front of the overlay when active",
