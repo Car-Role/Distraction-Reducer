@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @PluginDescriptor(
         name = "Distraction Reducer",
         description = "Blacks out the screen while skilling to reduce distractions",
-        tags = {"woodcutting", "fishing", "mining", "cooking", "herblore", "crafting", "fletching", "smithing", "magic", "skilling", "overlay"}
+        tags = {"woodcutting", "fishing", "mining", "cooking", "herblore", "crafting", "fletching", "smithing", "magic", "sailing", "salvaging", "skilling", "overlay"}
 )
 @Slf4j
 public class DistractionReducerPlugin extends Plugin {
@@ -200,6 +200,12 @@ public class DistractionReducerPlugin extends Plugin {
             10573,  // Yew logs
             10566,  // Magic logs
             10570   // Redwood logs
+    );
+
+    private static final Set<Integer> SAILING_SALVAGING_ANIMATION_IDS = Set.of(
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_DROP01, // Salvaging is beginning
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_IDLE01, // We are salvaging
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_INTERACT01 // Processing salvages
     );
 
     @Provides
@@ -389,6 +395,7 @@ public class DistractionReducerPlugin extends Plugin {
                 (CRAFTING_ANIMATION_IDS.contains(animation) && config.crafting()) ||
                 (FLETCHING_ANIMATION_IDS.contains(animation) && config.fletching()) ||
                 (FIREMAKING_ANIMATION_IDS.contains(animation) && config.firemaking()) ||
+                (SAILING_SALVAGING_ANIMATION_IDS.contains(animation) && config.sailing()) ||
                 (isSmithing(animation) && config.smithing()) ||
                 (isMagic(animation) && config.magic());
     }
