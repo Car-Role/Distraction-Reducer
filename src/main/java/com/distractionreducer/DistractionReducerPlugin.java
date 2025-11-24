@@ -203,9 +203,16 @@ public class DistractionReducerPlugin extends Plugin {
     );
 
     private static final Set<Integer> SAILING_SALVAGING_ANIMATION_IDS = Set.of(
-            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_DROP01, // Salvaging is beginning
-            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_IDLE01, // We are salvaging
-            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_INTERACT01 // Processing salvages
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_DROP01, // Salvaging is beginning
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_DROP01,
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_DROP01,
+            net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_DROP01,
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_IDLE01, // We are salvaging
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_IDLE01,
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_IDLE01,
+            net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_IDLE01,
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_INTERACT01, // Processing salvages
+            net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_INTERACT01
     );
 
     @Provides
