@@ -20,6 +20,7 @@ https://github.com/user-attachments/assets/3c1d7267-9103-41e2-9f6a-79cfa498e330
   - Crafting
   - Fletching
   - Smithing
+  - Sailing (Salvaging)
 - Customizable overlay color and opacity
 - Customizable restore delay
 - Individual toggles for each supported skill

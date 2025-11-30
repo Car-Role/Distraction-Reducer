@@ -139,6 +139,16 @@ public interface DistractionReducerConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+            keyName = "sailing",
+            name = "Sailing (Salvaging)",
+            description = "Display overlay while salvaging",
+            section = skillingToggles
+    )
+    default boolean sailing() {
+        return true;
+    }
+
     @Alpha
     @ConfigItem(
             keyName = "overlayColor",
