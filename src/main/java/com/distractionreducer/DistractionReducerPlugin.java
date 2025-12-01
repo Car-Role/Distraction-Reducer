@@ -188,6 +188,7 @@ public class DistractionReducerPlugin extends Plugin {
             AnimationID.MINING_MOTHERLODE_DRAGON_OR, AnimationID.MINING_MOTHERLODE_INFERNAL, AnimationID.MINING_MOTHERLODE_3A,
             AnimationID.MINING_MOTHERLODE_CRYSTAL, AnimationID.MINING_MOTHERLODE_TRAILBLAZER,
             6747, 6748, 6749, 6108, 6751, 6750, 6746, 8314, 7140, 643, 8349, 4483, 7284, 8350,
+            8888, // MINING_CRASHEDSTAR_DRAGON_OR_TRAILBLAZER
             7201
     );
 
@@ -357,8 +358,9 @@ public class DistractionReducerPlugin extends Plugin {
 
         int animation = player.getAnimation();
 
-        // Failsafe for Chambers of Xeric
-        if (client.getVarbitValue(Varbits.IN_RAID) > 0) {
+        // Failsafe for Chambers of Xeric - only disable when actually inside the raid instance
+        // The IN_RAID varbit can be > 0 in the lobby/bank area, so we also check for instanced region
+        if (client.getVarbitValue(Varbits.IN_RAID) > 0 && client.isInInstancedRegion()) {
             return false;
         }
 
