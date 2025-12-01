@@ -119,12 +119,12 @@ public class DistractionReducerPlugin extends Plugin {
     private static final Set<Integer> WOODCUTTING_ANIMATION_IDS = Set.of(
             AnimationID.WOODCUTTING_BRONZE, AnimationID.WOODCUTTING_IRON, AnimationID.WOODCUTTING_STEEL,
             AnimationID.WOODCUTTING_BLACK, AnimationID.WOODCUTTING_MITHRIL, AnimationID.WOODCUTTING_ADAMANT,
-            AnimationID.WOODCUTTING_RUNE, AnimationID.WOODCUTTING_DRAGON, AnimationID.WOODCUTTING_INFERNAL,
-            AnimationID.WOODCUTTING_3A_AXE, AnimationID.WOODCUTTING_CRYSTAL, AnimationID.WOODCUTTING_TRAILBLAZER,
-            AnimationID.WOODCUTTING_2H_BRONZE, AnimationID.WOODCUTTING_2H_IRON, AnimationID.WOODCUTTING_2H_STEEL,
-            AnimationID.WOODCUTTING_2H_BLACK, AnimationID.WOODCUTTING_2H_MITHRIL, AnimationID.WOODCUTTING_2H_ADAMANT,
-            AnimationID.WOODCUTTING_2H_RUNE, AnimationID.WOODCUTTING_2H_DRAGON, AnimationID.WOODCUTTING_2H_CRYSTAL,
-            AnimationID.WOODCUTTING_2H_CRYSTAL_INACTIVE, AnimationID.WOODCUTTING_2H_3A
+            AnimationID.WOODCUTTING_RUNE, AnimationID.WOODCUTTING_DRAGON, AnimationID.WOODCUTTING_DRAGON_OR,
+            AnimationID.WOODCUTTING_INFERNAL, AnimationID.WOODCUTTING_3A_AXE, AnimationID.WOODCUTTING_CRYSTAL,
+            AnimationID.WOODCUTTING_TRAILBLAZER, AnimationID.WOODCUTTING_2H_BRONZE, AnimationID.WOODCUTTING_2H_IRON,
+            AnimationID.WOODCUTTING_2H_STEEL, AnimationID.WOODCUTTING_2H_BLACK, AnimationID.WOODCUTTING_2H_MITHRIL,
+            AnimationID.WOODCUTTING_2H_ADAMANT, AnimationID.WOODCUTTING_2H_RUNE, AnimationID.WOODCUTTING_2H_DRAGON,
+            AnimationID.WOODCUTTING_2H_CRYSTAL, AnimationID.WOODCUTTING_2H_CRYSTAL_INACTIVE, AnimationID.WOODCUTTING_2H_3A
     );
 
     private static final Set<Integer> SMITHING_ANIMATION_IDS = Set.of(
@@ -139,7 +139,7 @@ public class DistractionReducerPlugin extends Plugin {
             AnimationID.FISHING_POLE_CAST, AnimationID.FISHING_PEARL_ROD, AnimationID.FISHING_PEARL_FLY_ROD,
             AnimationID.FISHING_PEARL_BARBARIAN_ROD, AnimationID.FISHING_PEARL_ROD_2,
             AnimationID.FISHING_PEARL_FLY_ROD_2, AnimationID.FISHING_PEARL_BARBARIAN_ROD_2,
-            AnimationID.FISHING_TRAILBLAZER_HARPOON
+            AnimationID.FISHING_TRAILBLAZER_HARPOON, AnimationID.FISHING_PEARL_OILY_ROD
     );
 
     private static final Set<Integer> COOKING_ANIMATION_IDS = Set.of(
@@ -191,15 +191,19 @@ public class DistractionReducerPlugin extends Plugin {
             7201
     );
 
-    // Update the FIREMAKING_ANIMATION_IDS set with correct bonfire animations
+    // Forester's campfire animations for all log types
     private static final Set<Integer> FIREMAKING_ANIMATION_IDS = Set.of(
+            10563,  // Arctic pine logs
+            10564,  // Blisterwood logs
             10565,  // Regular logs
-            10569,  // Oak logs
-            10572,  // Willow logs
-            10568,  // Maple logs
-            10573,  // Yew logs
             10566,  // Magic logs
-            10570   // Redwood logs
+            10567,  // Mahogany logs
+            10568,  // Maple logs
+            10569,  // Oak logs
+            10570,  // Redwood logs
+            10571,  // Teak logs
+            10572,  // Willow logs
+            10573   // Yew logs
     );
 
     private static final Set<Integer> SAILING_SALVAGING_ANIMATION_IDS = Set.of(
