@@ -194,17 +194,23 @@ public class DistractionReducerPlugin extends Plugin {
 
     // Forester's campfire animations for all log types
     private static final Set<Integer> FIREMAKING_ANIMATION_IDS = Set.of(
-            10563,  // Arctic pine logs
-            10564,  // Blisterwood logs
-            10565,  // Regular logs
-            10566,  // Magic logs
-            10567,  // Mahogany logs
-            10568,  // Maple logs
-            10569,  // Oak logs
-            10570,  // Redwood logs
-            10571,  // Teak logs
-            10572,  // Willow logs
-            10573   // Yew logs
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_GENERIC,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_ACHEY_TREE_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_ARCTIC_PINE_LOG,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_BLISTERWOOD_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_MAGIC_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_MAHOGANY_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_MAPLE_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_OAK_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_REDWOOD_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_TEAK_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_WILLOW_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_YEW_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_JATOBA_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_CAMPHOR_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_IRONWOOD_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_ROSEWOOD_LOGS
     );
 
     private static final Set<Integer> SAILING_SALVAGING_ANIMATION_IDS = Set.of(
