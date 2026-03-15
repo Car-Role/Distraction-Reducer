@@ -3,7 +3,8 @@ package com.distractionreducer;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import net.runelite.api.*;
-import net.runelite.api.coords.WorldPoint;  // Add this import
+import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.events.GameStateChanged;
@@ -22,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @PluginDescriptor(
         name = "Distraction Reducer",
         description = "Blacks out the screen while skilling to reduce distractions",
-        tags = {"woodcutting", "fishing", "mining", "cooking", "herblore", "crafting", "fletching", "smithing", "magic", "sailing", "salvaging", "skilling", "overlay"}
+        tags = { "woodcutting", "fishing", "mining", "cooking", "herblore", "crafting", "fletching", "smithing", "magic", "sailing", "salvaging", "hunter", "skilling", "overlay" }
 )
 @Slf4j
 public class DistractionReducerPlugin extends Plugin {
@@ -72,6 +73,30 @@ public class DistractionReducerPlugin extends Plugin {
 
     // Duke Sucellus Region ID
     private static final int DUKE_SUCELLUS_REGION = 12132;
+
+    //region Kruk's Dungeon (Maniacal Monkeys)
+    private static final int KRUKS_DUNGEON_REGION = 11662;
+    private static final Set<Integer> MONKEYTRAP_ACTIVE_OBJECT_IDS = Set.of(
+            net.runelite.api.gameval.ObjectID.HUNTING_MONKEYTRAP_SETTING,    // 28825 - trap being set up
+            net.runelite.api.gameval.ObjectID.HUNTING_MONKEYTRAP_SET,        // 28827 - trap set and waiting
+            net.runelite.api.gameval.ObjectID.HUNTING_MONKEYTRAP_TRAPPING_0, // 28828 - monkey triggering trap
+            net.runelite.api.gameval.ObjectID.HUNTING_MONKEYTRAP_TRAPPING_1  // 28829 - monkey triggering trap
+    );
+
+    /**
+     * Relative tile offsets where a maniacal monkey trap GameObject may exist
+     * relative to the player when hunting in Kruk's Dungeon.
+     * Maniacal monkey traps are placed exactly two tiles away from the player in
+     * one of the four cardinal/adjacent directions.
+     */
+    private static final int[][] MANIACAL_MONKEY_TRAP_OFFSETS =
+    {
+            {2, 0},
+            {-2, 0},
+            {0, 2},
+            {0, -2}
+    };
+    //endregion
 
     // POH Region IDs - Player-Owned Houses are instanced and use specific region ranges
     private static final Set<Integer> POH_REGIONS = Set.of(
@@ -313,6 +338,68 @@ public class DistractionReducerPlugin extends Plugin {
         updateOverlayVisibility();
     }
 
+    /**
+     * Returns true if the player is hunting maniacal monkeys.
+     * Detects this by checking the four tiles exactly two spaces away from the
+     * player (N/S/E/W) for an active monkey trap object in Kruk's Dungeon.
+     */
+    private boolean isHuntingManiacalMonkeys()
+    {
+        final Player player = client.getLocalPlayer();
+        if (player == null)
+        {
+            return false;
+        }
+
+        final WorldPoint worldPoint = player.getWorldLocation();
+        if (worldPoint == null || worldPoint.getRegionID() != KRUKS_DUNGEON_REGION)
+        {
+            return false;
+        }
+
+        final LocalPoint localPoint = player.getLocalLocation();
+        if (localPoint == null)
+        {
+            return false;
+        }
+
+        final int plane = worldPoint.getPlane();
+        final int sceneX = localPoint.getSceneX();
+        final int sceneY = localPoint.getSceneY();
+        final Tile[][][] tiles = player.getWorldView().getScene().getTiles();
+
+        // Check two tiles adjacent to the player in any direction for rock traps (4 possible spots)
+        for (int[] offset : MANIACAL_MONKEY_TRAP_OFFSETS)
+        {
+            final int x = sceneX + offset[0];
+            final int y = sceneY + offset[1];
+
+            // Make sure we're not checking out of the scene's bounds
+            if (x < 0 || y < 0 || x >= Constants.SCENE_SIZE || y >= Constants.SCENE_SIZE)
+            {
+                continue;
+            }
+
+            final Tile tile = tiles[plane][x][y];
+            if (tile == null)
+            {
+                continue;
+            }
+
+            // If there's a rock object next to the player...
+            for (GameObject obj : tile.getGameObjects())
+            {
+                // Check if a trap has been set on it
+                if (obj != null && MONKEYTRAP_ACTIVE_OBJECT_IDS.contains(obj.getId()))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private boolean isPlayerMoving(Player player) {
         int poseAnimation = player.getPoseAnimation();
 
@@ -410,7 +497,8 @@ public class DistractionReducerPlugin extends Plugin {
                 (FIREMAKING_ANIMATION_IDS.contains(animation) && config.firemaking()) ||
                 (SAILING_SALVAGING_ANIMATION_IDS.contains(animation) && config.sailing()) ||
                 (isSmithing(animation) && config.smithing()) ||
-                (isMagic(animation) && config.magic());
+                (isMagic(animation) && config.magic()) ||
+                (isHuntingManiacalMonkeys() && config.hunterManiacalMonkeys());
     }
 
     private boolean isInToaBank() {

@@ -149,6 +149,14 @@ public interface DistractionReducerConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+            keyName = "hunterManiacalMonkeys",
+            name = "Hunter (Maniacal Monkeys)",
+            description = "Display overlay while trapping maniacal monkeys",
+            section = skillingToggles
+    )
+    default boolean hunterManiacalMonkeys() { return true; }
+
     @Alpha
     @ConfigItem(
             keyName = "overlayColor",
