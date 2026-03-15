@@ -21,6 +21,7 @@ https://github.com/user-attachments/assets/3c1d7267-9103-41e2-9f6a-79cfa498e330
   - Fletching
   - Smithing
   - Sailing (Salvaging)
+  - Hunter (Maniacal Monkeys)
 - Customizable overlay color and opacity
 - Customizable restore delay
 - Individual toggles for each supported skill
@@ -28,7 +29,7 @@ https://github.com/user-attachments/assets/3c1d7267-9103-41e2-9f6a-79cfa498e330
 - Brief delay before activation to prevent flickering during short pauses
 
 ## How It Works
-1. The plugin detects when you're performing a supported skilling activity by monitoring your character's animation.
+1. The plugin detects when you're performing a supported skilling activity by monitoring your character's animation or position.
 2. If the corresponding skill toggle is enabled, the overlay will activate after a short delay (to prevent flickering during brief pauses).
 3. The overlay will disappear shortly after you stop the skilling activity or become idle for more than 2 game ticks.
 
