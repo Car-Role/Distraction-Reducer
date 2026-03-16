@@ -73,17 +73,18 @@ public class DistractionReducerPlugin extends Plugin {
     // Duke Sucellus Region ID
     private static final int DUKE_SUCELLUS_REGION = 12132;
 
-    // POH Region IDs - Player-Owned Houses are instanced and use specific region ranges
-    private static final Set<Integer> POH_REGIONS = Set.of(
-            7513,  // Rimmington POH
-            7769,  // Taverley POH
-            7257,  // Pollnivneach POH
-            6457,  // Hosidius POH
-            10553, // Rellekka POH
-            7499,  // Brimhaven POH
-            8013,  // Yanille POH
-            4919   // Prifddinas POH
+    //region POH IDs and State
+    private static final Set<Integer> POH_EXIT_PORTALS = Set.of(
+            net.runelite.api.gameval.ObjectID.POH_EXIT_PORTAL,
+            net.runelite.api.gameval.ObjectID.POH_EXIT_PORTAL_WILDERNESS
     );
+
+    private int cachedPohPortalX = -1;
+    private int cachedPohPortalY = -1;
+    private int cachedPohPortalPlane = -1;
+    private int missedPohScanRegionId = -1;
+    private int missedPohScanPlane    = -1;
+    //endregion
 
     // Updated Magic Animation IDs
     private static final Set<Integer> PLANK_MAKE_ANIMATION_IDS = Set.of(6298);
@@ -373,6 +374,7 @@ public class DistractionReducerPlugin extends Plugin {
 
         // Failsafe for various regions
         WorldPoint playerLocation = player.getWorldLocation();
+        WorldView worldView = player.getWorldView();
 
         // Check for Duke Sucellus (non-instanced)
         if (playerLocation != null && playerLocation.getRegionID() == DUKE_SUCELLUS_REGION) {
@@ -380,12 +382,12 @@ public class DistractionReducerPlugin extends Plugin {
         }
 
         // Check for POH (Player-Owned House) - disable overlay if not enabled in config
-        if (isInPOH() && !config.enableInPOH()) {
+        if (!config.enableInPOH() && isInPOH()) {
             return false;
         }
 
         // Check for instanced regions (TOA and Duke Sucellus)
-        if (client.isInInstancedRegion()) {
+        if (worldView.isInstance()) {
             WorldPoint instancePoint = WorldPoint.fromLocalInstance(client, player.getLocalLocation());
             if (instancePoint != null) {
                 int regionID = instancePoint.getRegionID();
@@ -418,35 +420,94 @@ public class DistractionReducerPlugin extends Plugin {
                 client.getVarbitValue(Varbits.TOA_RAID_LEVEL) > 0; // Check if in an active raid
     }
 
+    //region POH Logic
     private boolean isInPOH() {
-        Player player = client.getLocalPlayer();
-        if (player == null) {
+        final Player player = client.getLocalPlayer();
+        if (player == null) return false;
+
+        final WorldView worldView = player.getWorldView();
+        if (!worldView.isInstance()) {
+            clearCachedPohPortal();
             return false;
         }
 
-        WorldPoint playerLocation = player.getWorldLocation();
-        if (playerLocation == null) {
+        final Scene scene = worldView.getScene();
+        final Tile[][][] tiles = scene == null ? null : scene.getTiles();
+        final int plane = worldView.getPlane();
+
+        if (tiles == null || plane < 0 || plane >= tiles.length) {
+            clearCachedPohPortal();
             return false;
         }
 
-        int regionID = playerLocation.getRegionID();
-        
-        // Check if player is in any POH region
-        if (POH_REGIONS.contains(regionID)) {
+        final Tile[][] planeTiles = tiles[plane];
+        if (planeTiles == null) {
+            clearCachedPohPortal();
+            return false;
+        }
+
+        // Fast path 1: check cached portal location first
+        if (cachedPohPortalPlane == plane &&
+                cachedPohPortalX >= 0 && cachedPohPortalX < planeTiles.length &&
+                cachedPohPortalY >= 0 && cachedPohPortalY < planeTiles[0].length &&
+                hasPohExitPortal(planeTiles[cachedPohPortalX][cachedPohPortalY])) {
             return true;
         }
 
-        // Check for instanced POH (when visiting other players' houses)
-        if (client.isInInstancedRegion()) {
-            WorldPoint instancePoint = WorldPoint.fromLocalInstance(client, player.getLocalLocation());
-            if (instancePoint != null) {
-                int instanceRegionID = instancePoint.getRegionID();
-                return POH_REGIONS.contains(instanceRegionID);
+        // Hit cache is stale or missing
+        clearCachedPohPortal();
+
+        // Fast path 2: check region+plane miss cache
+        final WorldPoint instancePoint = WorldPoint.fromLocalInstance(client, player.getLocalLocation());
+        if (instancePoint != null) {
+            final int regionId = instancePoint.getRegionID();
+            if (regionId == missedPohScanRegionId && plane == missedPohScanPlane) {
+                return false;
+            }
+        }
+
+        // Slow path: full scan
+        for (int x = 0; x < planeTiles.length; x++) {
+            for (int y = 0; y < planeTiles[x].length; y++) {
+                if (hasPohExitPortal(planeTiles[x][y])) {
+                    cachedPohPortalX = x;
+                    cachedPohPortalY = y;
+                    cachedPohPortalPlane = plane;
+                    return true;
+                }
+            }
+        }
+
+        // Full scan found no portal — cache this region+plane as a miss
+        if (instancePoint != null) {
+            missedPohScanRegionId = instancePoint.getRegionID();
+            missedPohScanPlane    = plane;
+        }
+        return false;
+    }
+
+    private boolean hasPohExitPortal(Tile tile) {
+        if (tile == null) {
+            return false;
+        }
+
+        for (GameObject obj : tile.getGameObjects()) {
+            if (obj != null && POH_EXIT_PORTALS.contains(obj.getId())) {
+                return true;
             }
         }
 
         return false;
     }
+
+    private void clearCachedPohPortal() {
+        cachedPohPortalX = -1;
+        cachedPohPortalY = -1;
+        cachedPohPortalPlane = -1;
+        missedPohScanRegionId = -1;
+        missedPohScanPlane    = -1;
+    }
+    //endregion
 
     private boolean isSmithing(int animation) {
         if (SMITHING_ANIMATION_IDS.contains(animation)) {
