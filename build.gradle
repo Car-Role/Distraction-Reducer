@@ -33,7 +33,8 @@ dependencies {
 
 task runClient(type: JavaExec) {
 	doFirst {
-		classpath = files(configurations.pluginClasspath.resolvedConfiguration.lenientConfiguration.files) + sourceSets.main.output
+		def pluginFiles = configurations.pluginClasspath.resolvedConfiguration.lenientConfiguration.files
+		classpath = files(pluginFiles) + sourceSets.main.output
 		errorOutput = new FileOutputStream("${projectDir}/runelite-crash.log", true)
 	}
 	mainClass = 'net.runelite.client.RuneLite'
