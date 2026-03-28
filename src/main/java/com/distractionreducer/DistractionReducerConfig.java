@@ -281,6 +281,16 @@ public interface DistractionReducerConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "hideOverlayForScreenshots",
+            name = "Hide overlay in screenshots",
+            description = "Temporarily hide the overlay when notable events occur (level ups, collection log, etc.) so automatic screenshots are clean",
+            section = miscellaneous
+    )
+    default boolean hideOverlayForScreenshots() {
+        return true;
+    }
+
+    @ConfigItem(
             keyName = "showChat",
             name = "Show Chat",
             description = "Show chat window in front of the overlay when active",

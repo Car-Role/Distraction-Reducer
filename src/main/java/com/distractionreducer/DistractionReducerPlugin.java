@@ -7,6 +7,10 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.events.ChatMessage;
+import net.runelite.api.ChatMessageType;
+import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.ScriptID;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.config.ConfigManager;
@@ -76,6 +80,9 @@ public class DistractionReducerPlugin extends Plugin {
     
     // Interface auto-exit cooldown
     private int interfaceExitCooldownTicks = 0;
+
+    // Screenshot hide: temporarily suppress overlay for clean automatic screenshots
+    private int screenshotHideTicks = 0;
 
     private static final int WALKING_POSE = 1205;
     private static final int RUNNING_POSE = 1210;
@@ -316,6 +323,25 @@ public class DistractionReducerPlugin extends Plugin {
     }
 
     @Subscribe
+    public void onChatMessage(ChatMessage event) {
+        if (!config.hideOverlayForScreenshots()) return;
+        if (event.getType() != ChatMessageType.GAMEMESSAGE) return;
+        String message = event.getMessage();
+        if (message.contains("Congratulations, you've just advanced your") ||
+            message.contains("you've reached the highest possible level")) {
+            screenshotHideTicks = 3;
+        }
+    }
+
+    @Subscribe
+    public void onScriptPostFired(ScriptPostFired event) {
+        if (!config.hideOverlayForScreenshots()) return;
+        if (event.getScriptId() == ScriptID.COLLECTION_DRAW_LIST) {
+            screenshotHideTicks = 3;
+        }
+    }
+
+    @Subscribe
     public void onGameStateChanged(GameStateChanged gameStateChanged) {
         if (gameStateChanged.getGameState() == GameState.LOGGED_IN) {
             clientThread.invoke(this::updateOverlayVisibility);
@@ -352,6 +378,11 @@ public class DistractionReducerPlugin extends Plugin {
         // Decrement interface exit cooldown
         if (interfaceExitCooldownTicks > 0) {
             interfaceExitCooldownTicks--;
+        }
+
+        // Decrement screenshot hide timer
+        if (screenshotHideTicks > 0) {
+            screenshotHideTicks--;
         }
 
         // Handle skilling logic
@@ -474,6 +505,12 @@ public class DistractionReducerPlugin extends Plugin {
 
         // Hotkey override suppresses overlay entirely
         if (hotkeyOverrideActive) {
+            distractionReducerOverlay.setRenderOverlay(false);
+            return;
+        }
+
+        // Temporarily hide for automatic screenshots (level ups, collection log, etc.)
+        if (screenshotHideTicks > 0 && config.hideOverlayForScreenshots()) {
             distractionReducerOverlay.setRenderOverlay(false);
             return;
         }
