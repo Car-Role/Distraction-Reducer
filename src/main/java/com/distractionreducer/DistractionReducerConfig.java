@@ -5,8 +5,10 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Keybind;
 
 import java.awt.Color;
+import java.awt.event.KeyEvent;
 
 @ConfigGroup("distractionreducer")
 public interface DistractionReducerConfig extends Config {
@@ -149,6 +151,34 @@ public interface DistractionReducerConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+            keyName = "sailingSorting",
+            name = "Sailing (Sorting Salvage)",
+            description = "Display overlay while sorting/processing salvage",
+            section = skillingToggles
+    )
+    default boolean sailingSorting() {
+        return false;
+    }
+
+    @ConfigItem(
+            keyName = "hunterManiacalMonkeys",
+            name = "Hunter (Maniacal Monkeys)",
+            description = "Display overlay while trapping maniacal monkeys",
+            section = skillingToggles
+    )
+    default boolean hunterManiacalMonkeys() { return true; }
+
+    @ConfigItem(
+            keyName = "thieving",
+            name = "Thieving",
+            description = "Display overlay while thieving (pickpocketing, stalls, Varlamore houses)",
+            section = skillingToggles
+    )
+    default boolean thieving() {
+        return true;
+    }
+
     @Alpha
     @ConfigItem(
             keyName = "overlayColor",
@@ -168,6 +198,18 @@ public interface DistractionReducerConfig extends Config {
     )
     default int restoreDelay() {
         return 3;
+    }
+
+    @ConfigItem(
+            keyName = "activationDelay",
+            name = "Activation Delay",
+            description = "Ticks of continuous skilling required before the overlay activates. "
+                    + "Use to filter out short one-off animations (e.g. rockfall clearing at Motherload Mine). "
+                    + "0 = activate immediately. (Experimental)",
+            section = timing
+    )
+    default int activationDelay() {
+        return 0;
     }
 
     // Add this new section after the existing sections
@@ -216,6 +258,16 @@ public interface DistractionReducerConfig extends Config {
     )
     default boolean plankMake() {
         return false;
+    }
+
+    @ConfigItem(
+            keyName = "toggleHotkey",
+            name = "Toggle Hotkey",
+            description = "Hotkey to quickly enable/disable the overlay without going to settings",
+            section = miscellaneous
+    )
+    default Keybind toggleHotkey() {
+        return Keybind.NOT_SET;
     }
 
     @ConfigItem(

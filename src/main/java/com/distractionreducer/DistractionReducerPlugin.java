@@ -3,7 +3,8 @@ package com.distractionreducer;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import net.runelite.api.*;
-import net.runelite.api.coords.WorldPoint;  // Add this import
+import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.events.GameStateChanged;
@@ -17,12 +18,14 @@ import net.runelite.client.events.ConfigChanged;
 import java.util.Set;
 import java.util.HashSet;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.input.KeyManager;
+import net.runelite.client.util.HotkeyListener;
 import lombok.extern.slf4j.Slf4j;
 
 @PluginDescriptor(
         name = "Distraction Reducer",
         description = "Blacks out the screen while skilling to reduce distractions",
-        tags = {"woodcutting", "fishing", "mining", "cooking", "herblore", "crafting", "fletching", "smithing", "magic", "sailing", "salvaging", "skilling", "overlay"}
+        tags = { "woodcutting", "fishing", "mining", "cooking", "herblore", "crafting", "fletching", "smithing", "magic", "sailing", "salvaging", "hunter", "skilling", "overlay" }
 )
 @Slf4j
 public class DistractionReducerPlugin extends Plugin {
@@ -41,7 +44,28 @@ public class DistractionReducerPlugin extends Plugin {
     @Inject
     private DistractionReducerOverlay distractionReducerOverlay;
 
+    @Inject
+    private KeyManager keyManager;
+
+    // Hotkey toggle state - when true, overlay is suppressed
+    private boolean hotkeyOverrideActive = false;
+
+    private final HotkeyListener toggleHotkeyListener = new HotkeyListener(() -> config.toggleHotkey())
+    {
+        @Override
+        public void hotkeyPressed()
+        {
+            hotkeyOverrideActive = !hotkeyOverrideActive;
+            if (hotkeyOverrideActive)
+            {
+                distractionReducerOverlay.setRenderOverlay(false);
+            }
+            log.debug("Hotkey toggle pressed. Override active: {}", hotkeyOverrideActive);
+        }
+    };
+
     private int restoreDelayTicks = 0;
+    private int skillingStartTicks = 0;
     private boolean wasSkilling = false;
 
     // Combat integration fields
@@ -73,17 +97,36 @@ public class DistractionReducerPlugin extends Plugin {
     // Duke Sucellus Region ID
     private static final int DUKE_SUCELLUS_REGION = 12132;
 
-    // POH Region IDs - Player-Owned Houses are instanced and use specific region ranges
-    private static final Set<Integer> POH_REGIONS = Set.of(
-            7513,  // Rimmington POH
-            7769,  // Taverley POH
-            7257,  // Pollnivneach POH
-            6457,  // Hosidius POH
-            10553, // Rellekka POH
-            7499,  // Brimhaven POH
-            8013,  // Yanille POH
-            4919   // Prifddinas POH
+    //region Kruk's Dungeon (Maniacal Monkeys)
+    private static final int KRUKS_DUNGEON_REGION = 11662;
+    private static final Set<Integer> MONKEYTRAP_ACTIVE_OBJECT_IDS = Set.of(
+            net.runelite.api.gameval.ObjectID.HUNTING_MONKEYTRAP_SETTING,    // trap being set up
+            net.runelite.api.gameval.ObjectID.HUNTING_MONKEYTRAP_SET,        // trap set and waiting
+            net.runelite.api.gameval.ObjectID.HUNTING_MONKEYTRAP_TRAPPING_0, // monkey triggering trap
+            net.runelite.api.gameval.ObjectID.HUNTING_MONKEYTRAP_TRAPPING_1  // monkey triggering trap
     );
+
+    private static final int[][] MANIACAL_MONKEY_TRAP_OFFSETS =
+    {
+            {2, 0},
+            {-2, 0},
+            {0, 2},
+            {0, -2}
+    };
+    //endregion
+
+    //region POH IDs and State
+    private static final Set<Integer> POH_EXIT_PORTALS = Set.of(
+            net.runelite.api.gameval.ObjectID.POH_EXIT_PORTAL,
+            net.runelite.api.gameval.ObjectID.POH_EXIT_PORTAL_WILDERNESS
+    );
+
+    private int cachedPohPortalX = -1;
+    private int cachedPohPortalY = -1;
+    private int cachedPohPortalPlane = -1;
+    private int missedPohScanRegionId = -1;
+    private int missedPohScanPlane    = -1;
+    //endregion
 
     // Updated Magic Animation IDs
     private static final Set<Integer> PLANK_MAKE_ANIMATION_IDS = Set.of(6298);
@@ -143,7 +186,10 @@ public class DistractionReducerPlugin extends Plugin {
     );
 
     private static final Set<Integer> COOKING_ANIMATION_IDS = Set.of(
-            AnimationID.COOKING_FIRE, AnimationID.COOKING_RANGE, AnimationID.COOKING_WINE
+            AnimationID.COOKING_FIRE, AnimationID.COOKING_RANGE, AnimationID.COOKING_WINE,
+            AnimationID.FISHING_CUTTING_SACRED_EELS, // 7151 - Cutting sacred eels
+            AnimationID.FISHING_CRUSHING_INFERNAL_EELS, // 7553 - Crushing infernal eels
+            net.runelite.api.gameval.AnimationID.BRUT_HUMAN_KNIFEUSE // Cutting leaping fish (barbarian fishing)
     );
 
     private static final Set<Integer> HERBLORE_ANIMATION_IDS = Set.of(
@@ -162,6 +208,7 @@ public class DistractionReducerPlugin extends Plugin {
             887,  // Opal
             886,  // Jade
             885,  // Red topaz
+            AnimationID.GEM_CUTTING_AMETHYST, // 6295 - Amethyst (dart tips, arrowtips, bolt tips, javelin heads)
             7531, // Battlestaff crafting
             7202  // Zeah: Chiseling dark essence blocks into fragments
     );
@@ -194,30 +241,47 @@ public class DistractionReducerPlugin extends Plugin {
 
     // Forester's campfire animations for all log types
     private static final Set<Integer> FIREMAKING_ANIMATION_IDS = Set.of(
-            10563,  // Arctic pine logs
-            10564,  // Blisterwood logs
-            10565,  // Regular logs
-            10566,  // Magic logs
-            10567,  // Mahogany logs
-            10568,  // Maple logs
-            10569,  // Oak logs
-            10570,  // Redwood logs
-            10571,  // Teak logs
-            10572,  // Willow logs
-            10573   // Yew logs
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_GENERIC,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_ACHEY_TREE_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_ARCTIC_PINE_LOG,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_BLISTERWOOD_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_MAGIC_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_MAHOGANY_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_MAPLE_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_OAK_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_REDWOOD_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_TEAK_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_WILLOW_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_YEW_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_JATOBA_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_CAMPHOR_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_IRONWOOD_LOGS,
+            net.runelite.api.gameval.AnimationID.FORESTRY_CAMPFIRE_BURNING_ROSEWOOD_LOGS
     );
 
+    // Salvaging shipwrecks (hook drop + idle waiting)
     private static final Set<Integer> SAILING_SALVAGING_ANIMATION_IDS = Set.of(
-            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_DROP01, // Salvaging is beginning
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_DROP01,
             net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_DROP01,
             net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_DROP01,
             net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_DROP01,
-            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_IDLE01, // We are salvaging
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_IDLE01,
             net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_IDLE01,
             net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_IDLE01,
-            net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_IDLE01,
-            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_INTERACT01, // Processing salvages
+            net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_IDLE01
+    );
+
+    // Sorting/processing salvage
+    private static final Set<Integer> SAILING_SORTING_ANIMATION_IDS = Set.of(
+            net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_INTERACT01,
             net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_INTERACT01
+    );
+
+    private static final Set<Integer> THIEVING_ANIMATION_IDS = Set.of(
+            881,  // Pickpocketing NPCs
+            832,  // Stealing from stalls
+            AnimationID.THIEVING_VARLAMORE_STEALING_VALUABLES // 11075 - Varlamore house stealing
     );
 
     @Provides
@@ -228,6 +292,7 @@ public class DistractionReducerPlugin extends Plugin {
     @Override
     protected void startUp() {
         overlayManager.add(distractionReducerOverlay);
+        keyManager.registerKeyListener(toggleHotkeyListener);
         clientThread.invoke(this::updateOverlayVisibility);
         updateTargetMonsterIds();
     }
@@ -235,6 +300,8 @@ public class DistractionReducerPlugin extends Plugin {
     @Override
     protected void shutDown() {
         overlayManager.remove(distractionReducerOverlay);
+        keyManager.unregisterKeyListener(toggleHotkeyListener);
+        hotkeyOverrideActive = false;
     }
 
     @Subscribe
@@ -270,6 +337,7 @@ public class DistractionReducerPlugin extends Plugin {
             wasSkilling = false;
             wasCombating = false;
             restoreDelayTicks = 0;
+            skillingStartTicks = 0;
             combatRestoreDelayTicks = 0;
             
             // Set cooldown if interface auto-exit was triggered
@@ -288,13 +356,19 @@ public class DistractionReducerPlugin extends Plugin {
 
         // Handle skilling logic
         if (currentlySkilling) {
-            wasSkilling = true;
+            skillingStartTicks++;
             restoreDelayTicks = 0;
-        } else if (wasSkilling) {
-            restoreDelayTicks++;
-            if (restoreDelayTicks >= config.restoreDelay()) {
-                wasSkilling = false;
-                restoreDelayTicks = 0;
+            if (skillingStartTicks >= config.activationDelay()) {
+                wasSkilling = true;
+            }
+        } else {
+            skillingStartTicks = 0;
+            if (wasSkilling) {
+                restoreDelayTicks++;
+                if (restoreDelayTicks >= config.restoreDelay()) {
+                    wasSkilling = false;
+                    restoreDelayTicks = 0;
+                }
             }
         }
 
@@ -311,6 +385,64 @@ public class DistractionReducerPlugin extends Plugin {
         }
 
         updateOverlayVisibility();
+    }
+
+    /**
+     * Returns true if the player is hunting maniacal monkeys.
+     * Detects this by checking the four tiles exactly two spaces away from the
+     * player (N/S/E/W) for an active monkey trap object in Kruk's Dungeon.
+     */
+    private boolean isHuntingManiacalMonkeys()
+    {
+        final Player player = client.getLocalPlayer();
+        if (player == null)
+        {
+            return false;
+        }
+
+        final WorldPoint worldPoint = player.getWorldLocation();
+        if (worldPoint == null || worldPoint.getRegionID() != KRUKS_DUNGEON_REGION)
+        {
+            return false;
+        }
+
+        final LocalPoint localPoint = player.getLocalLocation();
+        if (localPoint == null)
+        {
+            return false;
+        }
+
+        final int plane = worldPoint.getPlane();
+        final int sceneX = localPoint.getSceneX();
+        final int sceneY = localPoint.getSceneY();
+        final Tile[][][] tiles = player.getWorldView().getScene().getTiles();
+
+        for (int[] offset : MANIACAL_MONKEY_TRAP_OFFSETS)
+        {
+            final int x = sceneX + offset[0];
+            final int y = sceneY + offset[1];
+
+            if (x < 0 || y < 0 || x >= Constants.SCENE_SIZE || y >= Constants.SCENE_SIZE)
+            {
+                continue;
+            }
+
+            final Tile tile = tiles[plane][x][y];
+            if (tile == null)
+            {
+                continue;
+            }
+
+            for (GameObject obj : tile.getGameObjects())
+            {
+                if (obj != null && MONKEYTRAP_ACTIVE_OBJECT_IDS.contains(obj.getId()))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private boolean isPlayerMoving(Player player) {
@@ -339,6 +471,12 @@ public class DistractionReducerPlugin extends Plugin {
     private void updateOverlayVisibility() {
         Player player = client.getLocalPlayer();
         if (player == null) return;
+
+        // Hotkey override suppresses overlay entirely
+        if (hotkeyOverrideActive) {
+            distractionReducerOverlay.setRenderOverlay(false);
+            return;
+        }
 
         boolean isMoving = isPlayerMoving(player);
         boolean shouldRenderFromSkilling = (isSkilling() || wasSkilling) && !isMoving;
@@ -373,6 +511,7 @@ public class DistractionReducerPlugin extends Plugin {
 
         // Failsafe for various regions
         WorldPoint playerLocation = player.getWorldLocation();
+        WorldView worldView = player.getWorldView();
 
         // Check for Duke Sucellus (non-instanced)
         if (playerLocation != null && playerLocation.getRegionID() == DUKE_SUCELLUS_REGION) {
@@ -380,12 +519,12 @@ public class DistractionReducerPlugin extends Plugin {
         }
 
         // Check for POH (Player-Owned House) - disable overlay if not enabled in config
-        if (isInPOH() && !config.enableInPOH()) {
+        if (!config.enableInPOH() && isInPOH()) {
             return false;
         }
 
         // Check for instanced regions (TOA and Duke Sucellus)
-        if (client.isInInstancedRegion()) {
+        if (worldView.isInstance()) {
             WorldPoint instancePoint = WorldPoint.fromLocalInstance(client, player.getLocalLocation());
             if (instancePoint != null) {
                 int regionID = instancePoint.getRegionID();
@@ -408,9 +547,12 @@ public class DistractionReducerPlugin extends Plugin {
                 (CRAFTING_ANIMATION_IDS.contains(animation) && config.crafting()) ||
                 (FLETCHING_ANIMATION_IDS.contains(animation) && config.fletching()) ||
                 (FIREMAKING_ANIMATION_IDS.contains(animation) && config.firemaking()) ||
+                (THIEVING_ANIMATION_IDS.contains(animation) && config.thieving()) ||
                 (SAILING_SALVAGING_ANIMATION_IDS.contains(animation) && config.sailing()) ||
+                (SAILING_SORTING_ANIMATION_IDS.contains(animation) && config.sailingSorting()) ||
                 (isSmithing(animation) && config.smithing()) ||
-                (isMagic(animation) && config.magic());
+                (isMagic(animation) && config.magic()) ||
+                (isHuntingManiacalMonkeys() && config.hunterManiacalMonkeys());
     }
 
     private boolean isInToaBank() {
@@ -418,35 +560,94 @@ public class DistractionReducerPlugin extends Plugin {
                 client.getVarbitValue(Varbits.TOA_RAID_LEVEL) > 0; // Check if in an active raid
     }
 
+    //region POH Logic
     private boolean isInPOH() {
-        Player player = client.getLocalPlayer();
-        if (player == null) {
+        final Player player = client.getLocalPlayer();
+        if (player == null) return false;
+
+        final WorldView worldView = player.getWorldView();
+        if (!worldView.isInstance()) {
+            clearCachedPohPortal();
             return false;
         }
 
-        WorldPoint playerLocation = player.getWorldLocation();
-        if (playerLocation == null) {
+        final Scene scene = worldView.getScene();
+        final Tile[][][] tiles = scene == null ? null : scene.getTiles();
+        final int plane = worldView.getPlane();
+
+        if (tiles == null || plane < 0 || plane >= tiles.length) {
+            clearCachedPohPortal();
             return false;
         }
 
-        int regionID = playerLocation.getRegionID();
-        
-        // Check if player is in any POH region
-        if (POH_REGIONS.contains(regionID)) {
+        final Tile[][] planeTiles = tiles[plane];
+        if (planeTiles == null) {
+            clearCachedPohPortal();
+            return false;
+        }
+
+        // Fast path 1: check cached portal location first
+        if (cachedPohPortalPlane == plane &&
+                cachedPohPortalX >= 0 && cachedPohPortalX < planeTiles.length &&
+                cachedPohPortalY >= 0 && cachedPohPortalY < planeTiles[0].length &&
+                hasPohExitPortal(planeTiles[cachedPohPortalX][cachedPohPortalY])) {
             return true;
         }
 
-        // Check for instanced POH (when visiting other players' houses)
-        if (client.isInInstancedRegion()) {
-            WorldPoint instancePoint = WorldPoint.fromLocalInstance(client, player.getLocalLocation());
-            if (instancePoint != null) {
-                int instanceRegionID = instancePoint.getRegionID();
-                return POH_REGIONS.contains(instanceRegionID);
+        // Hit cache is stale or missing
+        clearCachedPohPortal();
+
+        // Fast path 2: check region+plane miss cache
+        final WorldPoint instancePoint = WorldPoint.fromLocalInstance(client, player.getLocalLocation());
+        if (instancePoint != null) {
+            final int regionId = instancePoint.getRegionID();
+            if (regionId == missedPohScanRegionId && plane == missedPohScanPlane) {
+                return false;
+            }
+        }
+
+        // Slow path: full scan
+        for (int x = 0; x < planeTiles.length; x++) {
+            for (int y = 0; y < planeTiles[x].length; y++) {
+                if (hasPohExitPortal(planeTiles[x][y])) {
+                    cachedPohPortalX = x;
+                    cachedPohPortalY = y;
+                    cachedPohPortalPlane = plane;
+                    return true;
+                }
+            }
+        }
+
+        // Full scan found no portal — cache this region+plane as a miss
+        if (instancePoint != null) {
+            missedPohScanRegionId = instancePoint.getRegionID();
+            missedPohScanPlane    = plane;
+        }
+        return false;
+    }
+
+    private boolean hasPohExitPortal(Tile tile) {
+        if (tile == null) {
+            return false;
+        }
+
+        for (GameObject obj : tile.getGameObjects()) {
+            if (obj != null && POH_EXIT_PORTALS.contains(obj.getId())) {
+                return true;
             }
         }
 
         return false;
     }
+
+    private void clearCachedPohPortal() {
+        cachedPohPortalX = -1;
+        cachedPohPortalY = -1;
+        cachedPohPortalPlane = -1;
+        missedPohScanRegionId = -1;
+        missedPohScanPlane    = -1;
+    }
+    //endregion
 
     private boolean isSmithing(int animation) {
         if (SMITHING_ANIMATION_IDS.contains(animation)) {

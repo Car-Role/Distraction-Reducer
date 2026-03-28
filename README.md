@@ -13,22 +13,27 @@ https://github.com/user-attachments/assets/3c1d7267-9103-41e2-9f6a-79cfa498e330
 ## Features
 - Supports multiple skilling activities:
   - Woodcutting
-  - Fishing
+  - Fishing (including barbarian fishing and fish cutting)
   - Mining
   - Cooking
   - Herblore
-  - Crafting
+  - Crafting (including amethyst products)
   - Fletching
   - Smithing
-  - Sailing (Salvaging)
+  - Firemaking (Forester's Campfire, all log types)
+  - Magic (enchanting, plank make, and more)
+  - Sailing (Salvaging and Sorting)
+  - Hunter (Maniacal Monkeys)
+  - Thieving (pickpocketing, stalls, Varlamore houses)
 - Customizable overlay color and opacity
 - Customizable restore delay
+- Configurable activation delay to filter out short one-off animations (Experimental)
+- Quick-toggle hotkey to temporarily disable the overlay
 - Individual toggles for each supported skill
 - Automatic detection of skilling activities
-- Brief delay before activation to prevent flickering during short pauses
 
 ## How It Works
-1. The plugin detects when you're performing a supported skilling activity by monitoring your character's animation.
+1. The plugin detects when you're performing a supported skilling activity by monitoring your character's animation or position.
 2. If the corresponding skill toggle is enabled, the overlay will activate after a short delay (to prevent flickering during brief pauses).
 3. The overlay will disappear shortly after you stop the skilling activity or become idle for more than 2 game ticks.
 

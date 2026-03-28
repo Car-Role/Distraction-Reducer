@@ -15,8 +15,13 @@ repositories {
 
 def runeLiteVersion = 'latest.release'
 
+configurations {
+	pluginClasspath
+}
+
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
+	pluginClasspath group: 'net.runelite', name:'client', version: runeLiteVersion
 
 	compileOnly 'org.projectlombok:lombok:1.18.30'
 	annotationProcessor 'org.projectlombok:lombok:1.18.30'
@@ -26,7 +31,20 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.example'
+task runClient(type: JavaExec) {
+	doFirst {
+		classpath = files(configurations.pluginClasspath.resolvedConfiguration.lenientConfiguration.files) + sourceSets.main.output
+		errorOutput = new FileOutputStream("${projectDir}/runelite-crash.log", true)
+	}
+	mainClass = 'net.runelite.client.RuneLite'
+	args '--developer-mode'
+	jvmArgs '-ea',
+	        '-Dsun.java2d.noddraw=true',
+	        '--add-opens=java.desktop/sun.awt=ALL-UNNAMED',
+	        '--add-opens=java.desktop/sun.java2d=ALL-UNNAMED'
+}
+
+group = 'com.distractionreducer'
 version = '1.0-SNAPSHOT'
 
 tasks.withType(JavaCompile) {
