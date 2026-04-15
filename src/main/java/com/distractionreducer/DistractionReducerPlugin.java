@@ -174,7 +174,10 @@ public class DistractionReducerPlugin extends Plugin {
             AnimationID.WOODCUTTING_TRAILBLAZER, AnimationID.WOODCUTTING_2H_BRONZE, AnimationID.WOODCUTTING_2H_IRON,
             AnimationID.WOODCUTTING_2H_STEEL, AnimationID.WOODCUTTING_2H_BLACK, AnimationID.WOODCUTTING_2H_MITHRIL,
             AnimationID.WOODCUTTING_2H_ADAMANT, AnimationID.WOODCUTTING_2H_RUNE, AnimationID.WOODCUTTING_2H_DRAGON,
-            AnimationID.WOODCUTTING_2H_CRYSTAL, AnimationID.WOODCUTTING_2H_CRYSTAL_INACTIVE, AnimationID.WOODCUTTING_2H_3A
+            AnimationID.WOODCUTTING_2H_CRYSTAL, AnimationID.WOODCUTTING_2H_CRYSTAL_INACTIVE, AnimationID.WOODCUTTING_2H_3A,
+            net.runelite.api.gameval.AnimationID.HUMAN_WOODCUTTING_TRAILBLAZER_AXE,
+            net.runelite.api.gameval.AnimationID.HUMAN_WOODCUTTING_TRAILBLAZER_RELOADED_AXE,
+            net.runelite.api.gameval.AnimationID.HUMAN_WOODCUTTING_TRAILBLAZER_RELOADED_AXE_NO_INFERNAL
     );
 
     private static final Set<Integer> SMITHING_ANIMATION_IDS = Set.of(
