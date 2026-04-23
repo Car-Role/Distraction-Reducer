@@ -28,14 +28,14 @@ jobs:
 
       - name: Update distraction-reducer file
         run: |
-          echo "repository=https://github.com/Car-Role/Distraction-Reducer.git" > distraction-reducer
-          echo "commit=${{ steps.sha.outputs.sha }}" >> distraction-reducer
+          echo "repository=https://github.com/Car-Role/Distraction-Reducer.git" > plugins/distraction-reducer
+          echo "commit=${{ steps.sha.outputs.sha }}" >> plugins/distraction-reducer
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add distraction-reducer
+          git add plugins/distraction-reducer
           git diff --cached --quiet && echo "No changes, skipping" && exit 0
           git commit -m "Update Distraction-Reducer to ${{ steps.sha.outputs.sha }}"
           git push
